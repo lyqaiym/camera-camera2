@@ -21,11 +21,11 @@ import static com.google.common.truth.Truth.assertThat;
 import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.internal.compat.quirk.OnePixelShiftQuirk;
 
+import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
@@ -63,7 +63,7 @@ public class YuvImageOnePixelShiftQuirkTest {
         return data;
     }
 
-    @NonNull private final Config mConfig;
+    private final @NonNull Config mConfig;
 
     public YuvImageOnePixelShiftQuirkTest(@NonNull Config config) {
         mConfig = config;
@@ -84,7 +84,8 @@ public class YuvImageOnePixelShiftQuirkTest {
         shadowCharacteristics.set(CameraCharacteristics.LENS_FACING,
                 CameraCharacteristics.LENS_FACING_BACK);
         CameraCharacteristicsCompat characteristicsCompat =
-                CameraCharacteristicsCompat.toCameraCharacteristicsCompat(characteristics);
+                CameraCharacteristicsCompat.toCameraCharacteristicsCompat(characteristics,
+                        CAMERA_ID);
         final Quirks quirks = CameraQuirks.get(CAMERA_ID, characteristicsCompat);
 
         // Assert.
@@ -93,8 +94,8 @@ public class YuvImageOnePixelShiftQuirkTest {
     }
 
     static class Config {
-        @NonNull final String mBrand;
-        @NonNull final String mModel;
+        final @NonNull String mBrand;
+        final @NonNull String mModel;
         final boolean mIsSupported;
 
         Config(@NonNull String brand, @NonNull String model, boolean isSupported) {

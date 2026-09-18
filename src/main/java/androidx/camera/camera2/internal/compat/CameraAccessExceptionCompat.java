@@ -22,11 +22,11 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -38,7 +38,6 @@ import java.util.Set;
 /**
  * Helper for accessing features in {@link CameraAccessException} in a backwards compatible fashion.
  */
-@RequiresApi(21)
 public class CameraAccessExceptionCompat extends Exception {
 
     // Start of the CameraAccessException error
@@ -89,7 +88,6 @@ public class CameraAccessExceptionCompat extends Exception {
     /**
      * A deprecated HAL version is in use.
      *
-     * @hide
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     public static final int CAMERA_DEPRECATED_HAL = 1000;
@@ -136,7 +134,6 @@ public class CameraAccessExceptionCompat extends Exception {
 
     private final CameraAccessException mCameraAccessException;
 
-    /** @hide */
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(value = {
@@ -201,8 +198,7 @@ public class CameraAccessExceptionCompat extends Exception {
      *
      * @return platform class object, null if it is a compat specific error.
      */
-    @Nullable
-    public CameraAccessException toCameraAccessException() {
+    public @Nullable CameraAccessException toCameraAccessException() {
         return mCameraAccessException;
     }
 
@@ -212,8 +208,7 @@ public class CameraAccessExceptionCompat extends Exception {
      * @param cameraAccessException {@link CameraAccessException} class to wrap
      * @return wrapped class
      */
-    @NonNull
-    public static CameraAccessExceptionCompat toCameraAccessExceptionCompat(
+    public static @NonNull CameraAccessExceptionCompat toCameraAccessExceptionCompat(
             @NonNull CameraAccessException cameraAccessException) {
         if (cameraAccessException == null) {
             throw new NullPointerException("cameraAccessException should not be null");
@@ -221,8 +216,7 @@ public class CameraAccessExceptionCompat extends Exception {
         return new CameraAccessExceptionCompat(cameraAccessException);
     }
 
-    @Nullable
-    private static String getDefaultMessage(@AccessError int problem) {
+    private static @Nullable String getDefaultMessage(@AccessError int problem) {
         switch (problem) {
             case CAMERA_IN_USE:
                 return "The camera device is in use already";
@@ -257,8 +251,7 @@ public class CameraAccessExceptionCompat extends Exception {
         return String.format("%s (%d): %s", problemString, problem, message);
     }
 
-    @NonNull
-    private static String getProblemString(int problem) {
+    private static @NonNull String getProblemString(int problem) {
         String problemString;
         switch (problem) {
             case CAMERA_IN_USE:

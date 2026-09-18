@@ -32,10 +32,10 @@ import android.hardware.camera2.CameraManager;
 import android.os.Build;
 import android.os.Handler;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,7 +49,9 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.shadows.ShadowLog;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
@@ -223,6 +225,32 @@ public final class CameraManagerCompatTest {
         manager.getCameraCharacteristicsCompat(CAMERA_ID);
     }
 
+    @Test
+    @Config(minSdk = 30)
+    public void getConcurrentCameraIds_api30_returnsCameraIdSets() {
+        CameraManagerCompat manager = CameraManagerCompat.from(mContext);
+
+        try {
+            manager.getConcurrentCameraIds();
+        } catch (CameraAccessExceptionCompat e) {
+        }
+
+        verify(mInteractionCallback, times(1)).getConcurrentCameraIds();
+    }
+
+    @Test
+    @Config(maxSdk = 29)
+    public void getConcurrentCameraIds_api29_returnsCameraIdSets() {
+        CameraManagerCompat manager = CameraManagerCompat.from(mContext);
+
+        try {
+            manager.getConcurrentCameraIds();
+        } catch (CameraAccessExceptionCompat e) {
+        }
+
+        verify(mInteractionCallback, times(0)).getConcurrentCameraIds();
+    }
+
     /**
      * A Shadow of {@link CameraManager} which forwards invocations to callbacks to record
      * interactions.
@@ -234,6 +262,8 @@ public final class CameraManagerCompatTest {
     public static final class ShadowInteractionCameraManager {
 
         private static final String[] EMPTY_ID_LIST = new String[]{};
+
+        private static final Set<Set<String>> EMPTY_CONCURRENT_ID_SET = new HashSet<>();
         private final List<Callback> mCallbacks = new ArrayList<>();
         private final CameraCharacteristics mCameraCharacteristics =
                 mock(CameraCharacteristics.class);
@@ -242,9 +272,8 @@ public final class CameraManagerCompatTest {
             mCallbacks.add(callback);
         }
 
-        @NonNull
         @Implementation
-        protected String[] getCameraIdList() throws CameraAccessException {
+        protected String @NonNull [] getCameraIdList() throws CameraAccessException {
             for (Callback cb : mCallbacks) {
                 String[] ids = cb.getCameraIdList();
             }
@@ -252,9 +281,19 @@ public final class CameraManagerCompatTest {
             return EMPTY_ID_LIST;
         }
 
-        @NonNull
         @Implementation
-        protected CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId) {
+        protected @NonNull Set<Set<String>> getConcurrentCameraIds() throws CameraAccessException {
+            if (Build.VERSION.SDK_INT >= 30) {
+                for (Callback cb : mCallbacks) {
+                    Set<Set<String>> ids = cb.getConcurrentCameraIds();
+                }
+            }
+            return EMPTY_CONCURRENT_ID_SET;
+        }
+
+        @Implementation
+        protected @NonNull CameraCharacteristics getCameraCharacteristics(
+                @NonNull String cameraId) {
             for (Callback cb : mCallbacks) {
                 cb.getCameraCharacteristics(cameraId);
             }
@@ -267,7 +306,7 @@ public final class CameraManagerCompatTest {
 
         @Implementation
         protected void openCamera(@NonNull String cameraId,
-                @NonNull CameraDevice.StateCallback callback, @Nullable Handler handler) {
+                CameraDevice.@NonNull StateCallback callback, @Nullable Handler handler) {
             for (Callback cb : mCallbacks) {
                 cb.openCamera(cameraId, callback, handler);
             }
@@ -276,7 +315,7 @@ public final class CameraManagerCompatTest {
         @Implementation
         protected void openCamera(@NonNull String cameraId,
                 @NonNull Executor executor,
-                @NonNull CameraDevice.StateCallback callback) {
+                CameraDevice.@NonNull StateCallback callback) {
             for (Callback cb : mCallbacks) {
                 cb.openCamera(cameraId, executor, callback);
             }
@@ -284,8 +323,8 @@ public final class CameraManagerCompatTest {
 
         @Implementation
         protected void registerAvailabilityCallback(
-                @NonNull /* @CallbackExecutor */ Executor executor,
-                @NonNull CameraManager.AvailabilityCallback callback) {
+                /* @CallbackExecutor */ @NonNull Executor executor,
+                CameraManager.@NonNull AvailabilityCallback callback) {
             for (Callback cb : mCallbacks) {
                 cb.registerAvailabilityCallback(executor, callback);
             }
@@ -293,7 +332,7 @@ public final class CameraManagerCompatTest {
 
         @Implementation
         protected void registerAvailabilityCallback(
-                @NonNull CameraManager.AvailabilityCallback callback, @Nullable Handler handler) {
+                CameraManager.@NonNull AvailabilityCallback callback, @Nullable Handler handler) {
             for (Callback cb : mCallbacks) {
                 cb.registerAvailabilityCallback(callback, handler);
             }
@@ -301,34 +340,34 @@ public final class CameraManagerCompatTest {
 
         @Implementation
         protected void unregisterAvailabilityCallback(
-                @NonNull CameraManager.AvailabilityCallback callback) {
+                CameraManager.@NonNull AvailabilityCallback callback) {
             for (Callback cb : mCallbacks) {
                 cb.unregisterAvailabilityCallback(callback);
             }
         }
 
         interface Callback {
-            @NonNull
-            String[] getCameraIdList();
+            String @NonNull [] getCameraIdList();
 
-            @NonNull
-            CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId);
+            @NonNull Set<Set<String>> getConcurrentCameraIds();
+
+            @NonNull CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId);
 
             void openCamera(@NonNull String cameraId,
-                    @NonNull CameraDevice.StateCallback callback, @Nullable Handler handler);
+                    CameraDevice.@NonNull StateCallback callback, @Nullable Handler handler);
 
             void openCamera(@NonNull String cameraId,
                     @NonNull Executor executor,
-                    @NonNull CameraDevice.StateCallback callback);
+                    CameraDevice.@NonNull StateCallback callback);
 
-            void registerAvailabilityCallback(@NonNull /* @CallbackExecutor */ Executor executor,
-                    @NonNull CameraManager.AvailabilityCallback callback);
+            void registerAvailabilityCallback(/* @CallbackExecutor */ @NonNull Executor executor,
+                    CameraManager.@NonNull AvailabilityCallback callback);
 
-            void registerAvailabilityCallback(@NonNull CameraManager.AvailabilityCallback callback,
+            void registerAvailabilityCallback(CameraManager.@NonNull AvailabilityCallback callback,
                     @Nullable Handler handler);
 
             void unregisterAvailabilityCallback(
-                    @NonNull CameraManager.AvailabilityCallback callback);
+                    CameraManager.@NonNull AvailabilityCallback callback);
         }
     }
 }

@@ -16,54 +16,74 @@
 
 package androidx.camera.camera2.internal;
 
+import static android.hardware.camera2.CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES;
+import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON;
+import static android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION;
+import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO;
+import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA;
 import static android.hardware.camera2.CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING;
 import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME;
 import static android.hardware.camera2.CameraMetadata.SENSOR_INFO_TIMESTAMP_SOURCE_UNKNOWN;
 
 import static androidx.camera.camera2.internal.ZslUtil.isCapabilitySupported;
 
+import android.annotation.SuppressLint;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
 import android.util.Pair;
+import android.util.Range;
+import android.util.Size;
 import android.view.Surface;
 
+import androidx.annotation.FloatRange;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import androidx.annotation.IntRange;
 import androidx.annotation.OptIn;
-import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
+import androidx.camera.camera2.internal.compat.StreamConfigurationMapCompat;
+import androidx.camera.camera2.internal.compat.params.DynamicRangesCompat;
 import androidx.camera.camera2.internal.compat.quirk.CameraQuirks;
+import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
+import androidx.camera.camera2.internal.compat.quirk.ZslDisablerQuirk;
 import androidx.camera.camera2.internal.compat.workaround.FlashAvailabilityChecker;
 import androidx.camera.camera2.interop.Camera2CameraInfo;
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraState;
+import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExposureState;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.Logger;
 import androidx.camera.core.ZoomState;
-import androidx.camera.core.impl.CamcorderProfileProvider;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraInfoInternal;
+import androidx.camera.core.impl.DynamicRanges;
+import androidx.camera.core.impl.EncoderProfilesProvider;
 import androidx.camera.core.impl.ImageOutputConfig.RotationValue;
 import androidx.camera.core.impl.Quirks;
 import androidx.camera.core.impl.Timebase;
 import androidx.camera.core.impl.utils.CameraOrientationUtil;
+import androidx.camera.core.impl.utils.RedirectableLiveData;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MediatorLiveData;
-import androidx.lifecycle.Observer;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -78,7 +98,6 @@ import java.util.concurrent.Executor;
  * to the {@link Camera2CameraControlImpl}.
  */
 @OptIn(markerClass = ExperimentalCamera2Interop.class)
-@RequiresApi(21) // TODO(b/200306659): Remove and replace with annotation on package-info.java
 public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     private static final String TAG = "Camera2CameraInfo";
@@ -88,32 +107,30 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     private final Object mLock = new Object();
     @GuardedBy("mLock")
-    @Nullable
-    private Camera2CameraControlImpl mCamera2CameraControlImpl;
+    private @Nullable Camera2CameraControlImpl mCamera2CameraControlImpl;
     @GuardedBy("mLock")
-    @Nullable
-    private RedirectableLiveData<Integer> mRedirectTorchStateLiveData = null;
+    private @Nullable RedirectableLiveData<Integer> mRedirectTorchStateLiveData = null;
     @GuardedBy("mLock")
-    @Nullable
-    private RedirectableLiveData<ZoomState> mRedirectZoomStateLiveData = null;
-    @NonNull
-    private final RedirectableLiveData<CameraState> mCameraStateLiveData;
+    private @Nullable RedirectableLiveData<Integer> mRedirectTorchStrengthLiveData = null;
     @GuardedBy("mLock")
-    @Nullable
-    private List<Pair<CameraCaptureCallback, Executor>> mCameraCaptureCallbacks = null;
+    private @Nullable RedirectableLiveData<Integer> mRedirectLowLightBoostStateLiveData = null;
+    @GuardedBy("mLock")
+    private @Nullable RedirectableLiveData<ZoomState> mRedirectZoomStateLiveData = null;
+    private final @NonNull RedirectableLiveData<CameraState> mCameraStateLiveData;
+    @GuardedBy("mLock")
+    private @Nullable List<Pair<CameraCaptureCallback, Executor>> mCameraCaptureCallbacks = null;
 
-    @NonNull
-    private final Quirks mCameraQuirks;
-    @NonNull
-    private final CamcorderProfileProvider mCamera2CamcorderProfileProvider;
-    @NonNull
-    private final CameraManagerCompat mCameraManager;
+    private final @NonNull Quirks mCameraQuirks;
+    private final @NonNull EncoderProfilesProvider mCamera2EncoderProfilesProvider;
+    private final @NonNull CameraManagerCompat mCameraManager;
+
+    private @Nullable Set<CameraInfo> mPhysicalCameraInfos;
 
     /**
      * Constructs an instance. Before {@link #linkWithCameraControl(Camera2CameraControlImpl)} is
      * called, camera control related API (torch/exposure/zoom) will return default values.
      */
-    Camera2CameraInfoImpl(@NonNull String cameraId,
+    public Camera2CameraInfoImpl(@NonNull String cameraId,
             @NonNull CameraManagerCompat cameraManager) throws CameraAccessExceptionCompat {
         mCameraId = Preconditions.checkNotNull(cameraId);
         mCameraManager = cameraManager;
@@ -121,8 +138,8 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         mCameraCharacteristicsCompat = cameraManager.getCameraCharacteristicsCompat(mCameraId);
         mCamera2CameraInfo = new Camera2CameraInfo(this);
         mCameraQuirks = CameraQuirks.get(cameraId, mCameraCharacteristicsCompat);
-        mCamera2CamcorderProfileProvider = new Camera2CamcorderProfileProvider(cameraId,
-                mCameraCharacteristicsCompat);
+        mCamera2EncoderProfilesProvider = new Camera2EncoderProfilesProvider(cameraId,
+                mCameraQuirks);
         mCameraStateLiveData = new RedirectableLiveData<>(
                 CameraState.create(CameraState.Type.CLOSED));
     }
@@ -147,6 +164,16 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
                         mCamera2CameraControlImpl.getTorchControl().getTorchState());
             }
 
+            if (mRedirectTorchStrengthLiveData != null) {
+                mRedirectTorchStrengthLiveData.redirectTo(
+                        mCamera2CameraControlImpl.getTorchControl().getTorchStrengthLevel());
+            }
+
+            if (mRedirectLowLightBoostStateLiveData != null) {
+                mRedirectLowLightBoostStateLiveData.redirectTo(mCamera2CameraControlImpl
+                        .getLowLightBoostControl().getLowLightBoostState());
+            }
+
             if (mCameraCaptureCallbacks != null) {
                 for (Pair<CameraCaptureCallback, Executor> pair :
                         mCameraCaptureCallbacks) {
@@ -167,30 +194,22 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         mCameraStateLiveData.redirectTo(cameraStateSource);
     }
 
-    @NonNull
     @Override
-    public String getCameraId() {
+    public @NonNull String getCameraId() {
         return mCameraId;
     }
 
-    @NonNull
-    public CameraCharacteristicsCompat getCameraCharacteristicsCompat() {
+    public @NonNull CameraCharacteristicsCompat getCameraCharacteristicsCompat() {
         return mCameraCharacteristicsCompat;
     }
 
-    @Nullable
+    @CameraSelector.LensFacing
     @Override
-    public Integer getLensFacing() {
+    public int getLensFacing() {
         Integer lensFacing = mCameraCharacteristicsCompat.get(CameraCharacteristics.LENS_FACING);
-        Preconditions.checkNotNull(lensFacing);
-        switch (lensFacing) {
-            case CameraCharacteristics.LENS_FACING_FRONT:
-                return CameraSelector.LENS_FACING_FRONT;
-            case CameraCharacteristics.LENS_FACING_BACK:
-                return CameraSelector.LENS_FACING_BACK;
-            default:
-                return null;
-        }
+        Preconditions.checkArgument(lensFacing != null, "Unable to get the lens facing of the "
+                + "camera.");
+        return LensFacingUtil.getCameraSelectorLensFacing(lensFacing);
     }
 
     @Override
@@ -201,9 +220,8 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         // Currently this assumes that a back-facing camera is always opposite to the screen.
         // This may not be the case for all devices, so in the future we may need to handle that
         // scenario.
-        final Integer lensFacing = getLensFacing();
-        boolean isOppositeFacingScreen =
-                (lensFacing != null && CameraSelector.LENS_FACING_BACK == lensFacing);
+        final int lensFacing = getLensFacing();
+        boolean isOppositeFacingScreen = CameraSelector.LENS_FACING_BACK == lensFacing;
         return CameraOrientationUtil.getRelativeImageRotation(
                 relativeRotationDegrees,
                 sensorOrientation,
@@ -264,12 +282,11 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
 
     @Override
     public boolean hasFlashUnit() {
-        return FlashAvailabilityChecker.isFlashAvailable(mCameraCharacteristicsCompat);
+        return FlashAvailabilityChecker.isFlashAvailable(mCameraCharacteristicsCompat::get);
     }
 
-    @NonNull
     @Override
-    public LiveData<Integer> getTorchState() {
+    public @NonNull LiveData<Integer> getTorchState() {
         synchronized (mLock) {
             if (mCamera2CameraControlImpl == null) {
                 if (mRedirectTorchStateLiveData == null) {
@@ -288,9 +305,33 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
-    @NonNull
     @Override
-    public LiveData<ZoomState> getZoomState() {
+    public boolean isLowLightBoostSupported() {
+        return LowLightBoostControl.checkLowLightBoostAvailability(mCameraCharacteristicsCompat);
+    }
+
+    @Override
+    public @NonNull LiveData<Integer> getLowLightBoostState() {
+        synchronized (mLock) {
+            if (mCamera2CameraControlImpl == null) {
+                if (mRedirectLowLightBoostStateLiveData == null) {
+                    mRedirectLowLightBoostStateLiveData =
+                            new RedirectableLiveData<>(LowLightBoostControl.DEFAULT_LLB_STATE);
+                }
+                return mRedirectLowLightBoostStateLiveData;
+            }
+
+            // if RedirectableLiveData exists,  use it directly.
+            if (mRedirectLowLightBoostStateLiveData != null) {
+                return mRedirectLowLightBoostStateLiveData;
+            }
+
+            return mCamera2CameraControlImpl.getLowLightBoostControl().getLowLightBoostState();
+        }
+    }
+
+    @Override
+    public @NonNull LiveData<ZoomState> getZoomState() {
         synchronized (mLock) {
             if (mCamera2CameraControlImpl == null) {
                 if (mRedirectZoomStateLiveData == null) {
@@ -309,9 +350,8 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
-    @NonNull
     @Override
-    public ExposureState getExposureState() {
+    public @NonNull ExposureState getExposureState() {
         synchronized (mLock) {
             if (mCamera2CameraControlImpl == null) {
                 return ExposureControl.getDefaultExposureState(mCameraCharacteristicsCompat);
@@ -320,9 +360,8 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
-    @NonNull
     @Override
-    public LiveData<CameraState> getCameraState() {
+    public @NonNull LiveData<CameraState> getCameraState() {
         return mCameraStateLiveData;
     }
 
@@ -337,12 +376,38 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
      * @return {@link #IMPLEMENTATION_TYPE_CAMERA2_LEGACY} if the device is legacy, otherwise
      * {@link #IMPLEMENTATION_TYPE_CAMERA2}.
      */
-    @NonNull
     @Override
-    public String getImplementationType() {
+    public @NonNull String getImplementationType() {
         final int hardwareLevel = getSupportedHardwareLevel();
         return hardwareLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
                 ? IMPLEMENTATION_TYPE_CAMERA2_LEGACY : IMPLEMENTATION_TYPE_CAMERA2;
+    }
+
+    @FloatRange(from = 0, fromInclusive = false)
+    @Override
+    public float getIntrinsicZoomRatio() {
+        final Integer lensFacing =
+                mCameraCharacteristicsCompat.get(CameraCharacteristics.LENS_FACING);
+        if (lensFacing == null) {
+            return INTRINSIC_ZOOM_RATIO_UNKNOWN;
+        }
+
+        int fovDegrees;
+        int defaultFovDegrees;
+        try {
+            fovDegrees =
+                    FovUtil.focalLengthToViewAngleDegrees(
+                            FovUtil.getDefaultFocalLength(mCameraCharacteristicsCompat),
+                            FovUtil.getSensorHorizontalLength(mCameraCharacteristicsCompat));
+            defaultFovDegrees = FovUtil.getDeviceDefaultViewAngleDegrees(mCameraManager,
+                    lensFacing);
+        } catch (Exception e) {
+            Logger.e(TAG, "The camera is unable to provide necessary information to resolve its "
+                    + "intrinsic zoom ratio with error: " + e);
+            return INTRINSIC_ZOOM_RATIO_UNKNOWN;
+        }
+
+        return ((float) defaultFovDegrees) / fovDegrees;
     }
 
     @Override
@@ -356,9 +421,12 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         }
     }
 
+    @SuppressLint("NullAnnotationGroup")
+    @OptIn(markerClass = androidx.camera.core.ExperimentalZeroShutterLag.class)
     @Override
     public boolean isZslSupported() {
-        return Build.VERSION.SDK_INT >= 23 && isPrivateReprocessingSupported();
+        return Build.VERSION.SDK_INT >= 23 && isPrivateReprocessingSupported()
+                && (DeviceQuirks.get(ZslDisablerQuirk.class) == null);
     }
 
     @Override
@@ -367,16 +435,20 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
                 REQUEST_AVAILABLE_CAPABILITIES_PRIVATE_REPROCESSING);
     }
 
-    /** {@inheritDoc} */
-    @NonNull
     @Override
-    public CamcorderProfileProvider getCamcorderProfileProvider() {
-        return mCamera2CamcorderProfileProvider;
+    public boolean isLogicalMultiCameraSupported() {
+        return isCapabilitySupported(mCameraCharacteristicsCompat,
+                REQUEST_AVAILABLE_CAPABILITIES_LOGICAL_MULTI_CAMERA);
     }
 
-    @NonNull
+    /** {@inheritDoc} */
     @Override
-    public Timebase getTimebase() {
+    public @NonNull EncoderProfilesProvider getEncoderProfilesProvider() {
+        return mCamera2EncoderProfilesProvider;
+    }
+
+    @Override
+    public @NonNull Timebase getTimebase() {
         Integer timeSource = mCameraCharacteristicsCompat.get(
                 CameraCharacteristics.SENSOR_INFO_TIMESTAMP_SOURCE);
         Preconditions.checkNotNull(timeSource);
@@ -387,6 +459,99 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
             default:
                 return Timebase.UPTIME;
         }
+    }
+
+    @Override
+    public @NonNull Set<Integer> getSupportedOutputFormats() {
+        StreamConfigurationMapCompat mapCompat =
+                mCameraCharacteristicsCompat.getStreamConfigurationMapCompat();
+        int[] formats = mapCompat.getOutputFormats();
+        if (formats == null) {
+            return new HashSet<>();
+        }
+
+        Set<Integer> result = new HashSet<>();
+        for (int format : formats) {
+            result.add(format);
+        }
+        return result;
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedResolutions(int format) {
+        StreamConfigurationMapCompat mapCompat =
+                mCameraCharacteristicsCompat.getStreamConfigurationMapCompat();
+        Size[] size = mapCompat.getOutputSizes(format);
+        return size != null ? Arrays.asList(size) : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighResolutions(int format) {
+        StreamConfigurationMapCompat mapCompat =
+                mCameraCharacteristicsCompat.getStreamConfigurationMapCompat();
+        Size[] size = mapCompat.getHighResolutionOutputSizes(format);
+        return size != null ? Arrays.asList(size) : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull Set<DynamicRange> getSupportedDynamicRanges() {
+        DynamicRangesCompat dynamicRangesCompat = DynamicRangesCompat.fromCameraCharacteristics(
+                mCameraCharacteristicsCompat);
+
+        return dynamicRangesCompat.getSupportedDynamicRanges();
+    }
+
+    @Override
+    public boolean isHighSpeedSupported() {
+        return Build.VERSION.SDK_INT >= 23 && isCapabilitySupported(mCameraCharacteristicsCompat,
+                REQUEST_AVAILABLE_CAPABILITIES_CONSTRAINED_HIGH_SPEED_VIDEO);
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedHighSpeedFrameRateRanges() {
+        Range<Integer>[] ranges = mCameraCharacteristicsCompat.getStreamConfigurationMapCompat()
+                .getHighSpeedVideoFpsRanges();
+        return ranges != null ? new HashSet<>(Arrays.asList(ranges)) : Collections.emptySet();
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedHighSpeedFrameRateRangesFor(
+            @NonNull Size size) {
+        Range<Integer>[] ranges = null;
+        try {
+            ranges = mCameraCharacteristicsCompat.getStreamConfigurationMapCompat()
+                    .getHighSpeedVideoFpsRangesFor(size);
+        } catch (IllegalArgumentException e) {
+            Logger.w(TAG, "Can't get high speed frame rate ranges for " + size, e);
+        }
+        return ranges != null ? new HashSet<>(Arrays.asList(ranges)) : Collections.emptySet();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighSpeedResolutions() {
+        Size[] sizes = mCameraCharacteristicsCompat.getStreamConfigurationMapCompat()
+                .getHighSpeedVideoSizes();
+        return sizes != null ? Arrays.asList(sizes) : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull List<Size> getSupportedHighSpeedResolutionsFor(
+            @NonNull Range<Integer> fpsRange) {
+        Size[] sizes = null;
+        try {
+            sizes = mCameraCharacteristicsCompat.getStreamConfigurationMapCompat()
+                    .getHighSpeedVideoSizesFor(fpsRange);
+        } catch (IllegalArgumentException e) {
+            Logger.w(TAG, "Can't get high speed resolutions for " + fpsRange, e);
+        }
+        return sizes != null ? Arrays.asList(sizes) : Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
+            @NonNull Set<DynamicRange> candidateDynamicRanges) {
+        return DynamicRanges.findAllPossibleMatches(candidateDynamicRanges,
+                getSupportedDynamicRanges());
     }
 
     @Override
@@ -427,18 +592,79 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
     }
 
     /** {@inheritDoc} */
-    @NonNull
     @Override
-    public Quirks getCameraQuirks() {
+    public @NonNull Quirks getCameraQuirks() {
         return mCameraQuirks;
+    }
+
+    @Override
+    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
+        Range<Integer>[] availableTargetFpsRanges =
+                mCameraCharacteristicsCompat.get(
+                        CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
+        if (availableTargetFpsRanges != null) {
+            return new HashSet<>(Arrays.asList(availableTargetFpsRanges));
+        } else {
+            return Collections.emptySet();
+        }
+    }
+
+    @Override
+    public boolean isVideoStabilizationSupported() {
+        int[] availableVideoStabilizationModes =
+                mCameraCharacteristicsCompat.get(
+                        CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+        if (availableVideoStabilizationModes != null) {
+            for (int mode : availableVideoStabilizationModes) {
+                if (mode == CONTROL_VIDEO_STABILIZATION_MODE_ON) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isPreviewStabilizationSupported() {
+        int[] availableVideoStabilizationModes =
+                mCameraCharacteristicsCompat.get(
+                        CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES);
+        if (availableVideoStabilizationModes != null) {
+            for (int mode : availableVideoStabilizationModes) {
+                if (mode == CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
      * Gets the implementation of {@link Camera2CameraInfo}.
      */
-    @NonNull
-    public Camera2CameraInfo getCamera2CameraInfo() {
+    public @NonNull Camera2CameraInfo getCamera2CameraInfo() {
         return mCamera2CameraInfo;
+    }
+
+    @Override
+    public @NonNull Object getCameraCharacteristics() {
+        return mCameraCharacteristicsCompat.toCameraCharacteristics();
+    }
+
+    @Override
+    public @Nullable Object getPhysicalCameraCharacteristics(@NonNull String physicalCameraId) {
+        try {
+            if (!mCameraCharacteristicsCompat.getPhysicalCameraIds().contains(physicalCameraId)) {
+                return null;
+            }
+            return mCameraManager.getCameraCharacteristicsCompat(physicalCameraId)
+                    .toCameraCharacteristics();
+        } catch (CameraAccessExceptionCompat e) {
+            Logger.e(TAG,
+                    "Failed to get CameraCharacteristics for cameraId " + physicalCameraId,
+                    e);
+        }
+        return null;
     }
 
     /**
@@ -449,8 +675,7 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
      * their CameraCharacteristics.
      *
      */
-    @NonNull
-    public Map<String, CameraCharacteristics> getCameraCharacteristicsMap() {
+    public @NonNull Map<String, CameraCharacteristics> getCameraCharacteristicsMap() {
         LinkedHashMap<String, CameraCharacteristics> map = new LinkedHashMap<>();
 
         map.put(mCameraId, mCameraCharacteristicsCompat.toCameraCharacteristics());
@@ -471,39 +696,58 @@ public final class Camera2CameraInfoImpl implements CameraInfoInternal {
         return map;
     }
 
-    /**
-     * A {@link LiveData} which can be redirected to another {@link LiveData}. If no redirection
-     * is set, initial value will be used.
-     */
-    static class RedirectableLiveData<T> extends MediatorLiveData<T> {
-        private LiveData<T> mLiveDataSource;
-        private final T mInitialValue;
-
-        RedirectableLiveData(T initialValue) {
-            mInitialValue = initialValue;
-        }
-
-        void redirectTo(@NonNull LiveData<T> liveDataSource) {
-            if (mLiveDataSource != null) {
-                super.removeSource(mLiveDataSource);
+    @Override
+    public @NonNull Set<CameraInfo> getPhysicalCameraInfos() {
+        if (mPhysicalCameraInfos == null) {
+            mPhysicalCameraInfos = new HashSet<>();
+            for (String physicalCameraId : mCameraCharacteristicsCompat.getPhysicalCameraIds()) {
+                try {
+                    CameraInfo physicalCameraInfo = new Camera2PhysicalCameraInfoImpl(
+                            physicalCameraId,
+                            mCameraManager);
+                    mPhysicalCameraInfos.add(physicalCameraInfo);
+                } catch (CameraAccessExceptionCompat e) {
+                    Logger.e(TAG,
+                            "Failed to get CameraCharacteristics for cameraId " + physicalCameraId,
+                            e);
+                    return Collections.emptySet();
+                }
             }
-            mLiveDataSource = liveDataSource;
-            super.addSource(liveDataSource, this::setValue);
         }
 
-        @Override
-        public <S> void addSource(@NonNull LiveData<S> source,
-                @NonNull Observer<? super S> onChanged) {
-            throw new UnsupportedOperationException();
-        }
+        return mPhysicalCameraInfos;
+    }
 
-        // Overrides getValue() to reflect the correct value from source. This is required to ensure
-        // getValue() is correct when observe() or observeForever() is not called.
-        @Override
-        public T getValue() {
-            // Returns initial value if source is not set.
-            return mLiveDataSource == null ? mInitialValue : mLiveDataSource.getValue();
+    @Override
+    @IntRange(from = 0)
+    public int getMaxTorchStrengthLevel() {
+        return isTorchStrengthSupported() ? mCameraCharacteristicsCompat.getMaxTorchStrengthLevel()
+                : TORCH_STRENGTH_LEVEL_UNSUPPORTED;
+    }
+
+    @Override
+    public @NonNull LiveData<Integer> getTorchStrengthLevel() {
+        synchronized (mLock) {
+            if (mCamera2CameraControlImpl == null) {
+                if (mRedirectTorchStrengthLiveData == null) {
+                    mRedirectTorchStrengthLiveData = new RedirectableLiveData<>(
+                            isTorchStrengthSupported()
+                                    ? mCameraCharacteristicsCompat.getDefaultTorchStrengthLevel()
+                                    : TORCH_STRENGTH_LEVEL_UNSUPPORTED);
+                }
+                return mRedirectTorchStrengthLiveData;
+            }
+
+            if (mRedirectTorchStrengthLiveData != null) {
+                return mRedirectTorchStrengthLiveData;
+            }
+
+            return mCamera2CameraControlImpl.getTorchControl().getTorchStrengthLevel();
         }
     }
 
+    @Override
+    public boolean isTorchStrengthSupported() {
+        return mCameraCharacteristicsCompat.isTorchStrengthLevelSupported();
+    }
 }
