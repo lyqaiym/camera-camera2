@@ -22,11 +22,10 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -198,7 +197,8 @@ public class CameraAccessExceptionCompat extends Exception {
      *
      * @return platform class object, null if it is a compat specific error.
      */
-    public @Nullable CameraAccessException toCameraAccessException() {
+    @Nullable
+    public CameraAccessException toCameraAccessException() {
         return mCameraAccessException;
     }
 
@@ -208,7 +208,8 @@ public class CameraAccessExceptionCompat extends Exception {
      * @param cameraAccessException {@link CameraAccessException} class to wrap
      * @return wrapped class
      */
-    public static @NonNull CameraAccessExceptionCompat toCameraAccessExceptionCompat(
+    @NonNull
+    public static CameraAccessExceptionCompat toCameraAccessExceptionCompat(
             @NonNull CameraAccessException cameraAccessException) {
         if (cameraAccessException == null) {
             throw new NullPointerException("cameraAccessException should not be null");
@@ -216,7 +217,8 @@ public class CameraAccessExceptionCompat extends Exception {
         return new CameraAccessExceptionCompat(cameraAccessException);
     }
 
-    private static @Nullable String getDefaultMessage(@AccessError int problem) {
+    @Nullable
+    private static String getDefaultMessage(@AccessError int problem) {
         switch (problem) {
             case CAMERA_IN_USE:
                 return "The camera device is in use already";
@@ -251,7 +253,8 @@ public class CameraAccessExceptionCompat extends Exception {
         return String.format("%s (%d): %s", problemString, problem, message);
     }
 
-    private static @NonNull String getProblemString(int problem) {
+    @NonNull
+    private static String getProblemString(int problem) {
         String problemString;
         switch (problem) {
             case CAMERA_IN_USE:

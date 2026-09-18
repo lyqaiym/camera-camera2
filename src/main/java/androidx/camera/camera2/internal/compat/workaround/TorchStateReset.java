@@ -18,6 +18,7 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
@@ -25,8 +26,6 @@ import androidx.camera.camera2.internal.compat.quirk.TorchIsClosedAfterImageCapt
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeferrableSurface;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
@@ -72,7 +71,8 @@ public class TorchStateReset {
      * Tags since it is only used for Torch reset.
      */
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
-    public @NonNull CaptureConfig createTorchResetRequest(@NonNull CaptureConfig repeatingConfig) {
+    @NonNull
+    public CaptureConfig createTorchResetRequest(@NonNull CaptureConfig repeatingConfig) {
         CaptureConfig.Builder captureConfigBuilder = new CaptureConfig.Builder();
         captureConfigBuilder.setTemplateType(repeatingConfig.getTemplateType());
 

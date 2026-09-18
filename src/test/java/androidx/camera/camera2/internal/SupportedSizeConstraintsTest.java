@@ -33,6 +33,7 @@ import android.media.CamcorderProfile;
 import android.os.Build;
 import android.util.Size;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -49,7 +50,6 @@ import androidx.camera.testing.impl.fakes.FakeCameraFactory;
 import androidx.test.core.app.ApplicationProvider;
 
 import org.codehaus.plexus.util.ReflectionUtils;
-import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

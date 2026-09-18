@@ -21,10 +21,9 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -38,7 +37,7 @@ class CameraManagerCompatApi29Impl extends CameraManagerCompatApi28Impl {
     @RequiresPermission(android.Manifest.permission.CAMERA)
     @Override
     public void openCamera(@NonNull String cameraId, @NonNull Executor executor,
-            CameraDevice.@NonNull StateCallback callback) throws CameraAccessExceptionCompat {
+            @NonNull CameraDevice.StateCallback callback) throws CameraAccessExceptionCompat {
 
         try {
             // Pass through directly to override the DND workaround on API 28
@@ -48,8 +47,9 @@ class CameraManagerCompatApi29Impl extends CameraManagerCompatApi28Impl {
         }
     }
 
+    @NonNull
     @Override
-    public @NonNull CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
+    public CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
             throws CameraAccessExceptionCompat {
 
         try {

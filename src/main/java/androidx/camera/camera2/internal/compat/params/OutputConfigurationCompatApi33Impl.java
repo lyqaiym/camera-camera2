@@ -19,10 +19,9 @@ package androidx.camera.camera2.internal.compat.params;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * Implementation of the OutputConfiguration compat methods for API 33 and above.
@@ -68,8 +67,9 @@ public class OutputConfigurationCompatApi33Impl extends OutputConfigurationCompa
         ((OutputConfiguration) getOutputConfiguration()).setDynamicRangeProfile(profile);
     }
 
+    @NonNull
     @Override
-    public @NonNull Object getOutputConfiguration() {
+    public Object getOutputConfiguration() {
         Preconditions.checkArgument(mObject instanceof OutputConfiguration);
         return mObject;
     }

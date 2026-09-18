@@ -22,6 +22,8 @@ import static android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LE
 
 import static androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio.RATIO_MAX_JPEG;
 import static androidx.camera.camera2.internal.compat.workaround.TargetAspectRatio.RATIO_ORIGINAL;
+import static androidx.camera.core.AspectRatio.RATIO_16_9;
+import static androidx.camera.core.AspectRatio.RATIO_4_3;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -30,10 +32,14 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.util.Range;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+import androidx.camera.core.AspectRatio;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.Preview;
+import androidx.camera.core.UseCase;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -61,45 +67,46 @@ public class TargetAspectRatioTest {
     @ParameterizedRobolectricTestRunner.Parameters
     public static Collection<Object[]> data() {
         final List<Object[]> data = new ArrayList<>();
-        data.add(new Object[]{new Config("Google", "Nexus 4",
-                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_MAX_JPEG,
+        data.add(new Object[]{new Config("Google", "Nexus 4", true,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_4_3, RATIO_MAX_JPEG,
                 new Range<>(21, 22))});
-        data.add(new Object[]{new Config("Google", "Nexus 4",
-                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_MAX_JPEG,
+        data.add(new Object[]{new Config("Google", "Nexus 4", true,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_16_9, RATIO_MAX_JPEG,
                 new Range<>(21, 22))});
-        data.add(new Object[]{new Config("Google", "Nexus 4",
-                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_MAX_JPEG,
+        data.add(new Object[]{new Config("Google", "Nexus 4", false,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_4_3, RATIO_MAX_JPEG,
                 new Range<>(21, 22))});
-        data.add(new Object[]{new Config("Google", "Nexus 4",
-                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_MAX_JPEG,
+        data.add(new Object[]{new Config("Google", "Nexus 4", false,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY, RATIO_16_9, RATIO_MAX_JPEG,
                 new Range<>(21, 22))});
 
-        data.add(new Object[]{new Config(null, null,
-                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_ORIGINAL, ALL_API_LEVELS)});
-        data.add(new Object[]{new Config(null, null,
-                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_ORIGINAL,
+        data.add(new Object[]{new Config(null, null, true,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_4_3, RATIO_ORIGINAL, ALL_API_LEVELS)});
+        data.add(new Object[]{new Config(null, null, true,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_16_9, RATIO_ORIGINAL,
                 ALL_API_LEVELS)});
-        data.add(new Object[]{new Config(null, null,
-                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_ORIGINAL, ALL_API_LEVELS)});
-        data.add(new Object[]{new Config(null, null,
-                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_ORIGINAL,
+        data.add(new Object[]{new Config(null, null, false,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_4_3, RATIO_ORIGINAL, ALL_API_LEVELS)});
+        data.add(new Object[]{new Config(null, null, false,
+                INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED, RATIO_16_9, RATIO_ORIGINAL,
                 ALL_API_LEVELS)});
 
         // Test the legacy camera/Android 5.0 quirk.
-        data.add(new Object[]{new Config(null, null, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-                 RATIO_MAX_JPEG, new Range<>(21, 21))});
-        data.add(new Object[]{new Config(null, null, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-                RATIO_MAX_JPEG, new Range<>(21, 21))});
-        data.add(new Object[]{new Config(null, null, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-                RATIO_MAX_JPEG, new Range<>(21, 21))});
-        data.add(new Object[]{new Config(null, null, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
-                RATIO_MAX_JPEG, new Range<>(21, 21))});
+        data.add(new Object[]{new Config(null, null, true, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+                RATIO_4_3, RATIO_MAX_JPEG, new Range<>(21, 21))});
+        data.add(new Object[]{new Config(null, null, true, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+                RATIO_16_9, RATIO_MAX_JPEG, new Range<>(21, 21))});
+        data.add(new Object[]{new Config(null, null, false, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+                RATIO_4_3, RATIO_MAX_JPEG, new Range<>(21, 21))});
+        data.add(new Object[]{new Config(null, null, false, INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY,
+                RATIO_16_9, RATIO_MAX_JPEG, new Range<>(21, 21))});
         return data;
     }
 
-    private final @NonNull Config mConfig;
+    @NonNull
+    private final Config mConfig;
 
-    public TargetAspectRatioTest(final @NonNull Config config) {
+    public TargetAspectRatioTest(@NonNull final Config config) {
         mConfig = config;
     }
 
@@ -112,13 +119,24 @@ public class TargetAspectRatioTest {
             ReflectionHelpers.setStaticField(Build.class, "MODEL", mConfig.mModel);
         }
 
+        // Set up use case
+        final UseCase usecase;
+        if (mConfig.mIsPreview) {
+            usecase = new Preview.Builder()
+                    .setTargetAspectRatio(mConfig.mInputAspectRatio)
+                    .build();
+        } else {
+            usecase = new ImageAnalysis.Builder()
+                    .setTargetAspectRatio(mConfig.mInputAspectRatio)
+                    .build();
+        }
         final int aspectRatio = new TargetAspectRatio().get(
                 BACK_CAMERA_ID, getCharacteristicsCompat(mConfig.mHardwareLevel));
         assertThat(aspectRatio).isEqualTo(getExpectedAspectRatio());
     }
 
-    private @NonNull CameraCharacteristicsCompat getCharacteristicsCompat(
-            int supportedHardwareLevel) {
+    @NonNull
+    private CameraCharacteristicsCompat getCharacteristicsCompat(int supportedHardwareLevel) {
         CameraCharacteristics characteristics =
                 ShadowCameraCharacteristics.newCameraCharacteristics();
 
@@ -138,19 +156,27 @@ public class TargetAspectRatioTest {
     }
 
     static class Config {
-        final @Nullable String mBrand;
-        final @Nullable String mModel;
+        @Nullable
+        final String mBrand;
+        @Nullable
+        final String mModel;
+        final boolean mIsPreview;
+        @AspectRatio.Ratio
+        final int mInputAspectRatio;
         @TargetAspectRatio.Ratio
         final int mExpectedAspectRatio;
         final int mHardwareLevel;
         final Range<Integer> mAffectedApiLevels;
 
-        Config(@Nullable String brand, @Nullable String model, int hardwareLevel,
+        Config(@Nullable String brand, @Nullable String model, boolean isPreview, int hardwareLevel,
+                @AspectRatio.Ratio int inputAspectRatio,
                 @TargetAspectRatio.Ratio int expectedAspectRatio,
                 @NonNull Range<Integer> affectedApiLevels) {
             mBrand = brand;
             mModel = model;
+            mIsPreview = isPreview;
             mHardwareLevel = hardwareLevel;
+            mInputAspectRatio = inputAspectRatio;
             mExpectedAspectRatio = expectedAspectRatio;
             mAffectedApiLevels = affectedApiLevels;
         }

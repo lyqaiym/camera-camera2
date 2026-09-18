@@ -20,14 +20,12 @@ import android.graphics.ImageFormat;
 import android.graphics.PixelFormat;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
-import android.util.Range;
 import android.util.Size;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.workaround.OutputSizesCorrector;
 import androidx.camera.core.Logger;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +62,8 @@ public class StreamConfigurationMapCompat {
      *                                                         retrieved.
      * @return wrapped class
      */
-    static @NonNull StreamConfigurationMapCompat toStreamConfigurationMapCompat(
+    @NonNull
+    static StreamConfigurationMapCompat toStreamConfigurationMapCompat(
             @NonNull StreamConfigurationMap map,
             @NonNull OutputSizesCorrector outputSizesCorrector) {
         return new StreamConfigurationMapCompat(map, outputSizesCorrector);
@@ -81,7 +80,8 @@ public class StreamConfigurationMapCompat {
      * @see ImageFormat
      * @see PixelFormat
      */
-    public int @Nullable [] getOutputFormats() {
+    @Nullable
+    public int[] getOutputFormats() {
         int[] result = mImpl.getOutputFormats();
         return result == null ? null : result.clone();
     }
@@ -97,20 +97,14 @@ public class StreamConfigurationMapCompat {
      * @see ImageFormat
      * @see PixelFormat
      */
-    public Size @Nullable [] getOutputSizes(int format) {
+    @Nullable
+    public Size[] getOutputSizes(int format) {
         if (mCachedFormatOutputSizes.containsKey(format)) {
             Size[] cachedOutputSizes = mCachedFormatOutputSizes.get(format);
             return cachedOutputSizes == null ? null : mCachedFormatOutputSizes.get(format).clone();
         }
 
-        Size[] outputSizes = null;
-        try {
-            // b/378508360: try-catch to workaround the exception when using
-            // StreamConfigurationMap provided by Robolectric.
-            outputSizes = mImpl.getOutputSizes(format);
-        } catch (Throwable t) {
-            Logger.w(TAG, "Failed to get output sizes for " + format, t);
-        }
+        Size[] outputSizes = mImpl.getOutputSizes(format);
 
         if (outputSizes == null || outputSizes.length == 0) {
             Logger.w(TAG, "Retrieved output sizes array is null or empty for format " + format);
@@ -132,20 +126,14 @@ public class StreamConfigurationMapCompat {
      * or {@code null} iff the {@code klass} is not a supported output.
      * @throws NullPointerException if {@code klass} was {@code null}
      */
-    public <T> Size @Nullable [] getOutputSizes(@NonNull Class<T> klass) {
+    @Nullable
+    public <T> Size[] getOutputSizes(@NonNull Class<T> klass) {
         if (mCachedClassOutputSizes.containsKey(klass)) {
             Size[] cachedOutputSizes = mCachedClassOutputSizes.get(klass);
             return cachedOutputSizes == null ? null : mCachedClassOutputSizes.get(klass).clone();
         }
 
-        Size[] outputSizes = null;
-        try {
-            // b/378508360: try-catch to workaround the exception when using
-            // StreamConfigurationMap provided by Robolectric.
-            outputSizes = mImpl.getOutputSizes(klass);
-        } catch (Throwable t) {
-            Logger.w(TAG, "Fail to get output sizes for " + klass, t);
-        }
+        Size[] outputSizes = mImpl.getOutputSizes(klass);
 
         if (outputSizes == null || outputSizes.length == 0) {
             Logger.w(TAG, "Retrieved output sizes array is null or empty for class " + klass);
@@ -166,7 +154,8 @@ public class StreamConfigurationMapCompat {
      * @see ImageFormat
      * @see PixelFormat
      */
-    public Size @Nullable [] getHighResolutionOutputSizes(int format) {
+    @Nullable
+    public Size[] getHighResolutionOutputSizes(int format) {
         if (mCachedFormatHighResolutionOutputSizes.containsKey(format)) {
             Size[] cachedOutputSizes = mCachedFormatHighResolutionOutputSizes.get(format);
             return cachedOutputSizes == null ? null : mCachedFormatHighResolutionOutputSizes.get(
@@ -184,66 +173,32 @@ public class StreamConfigurationMapCompat {
         return outputSizes != null ? outputSizes.clone() : null;
     }
 
-    /** Get a list of supported high speed video recording FPS ranges. */
-    @Nullable
-    public Range<Integer>[] getHighSpeedVideoFpsRanges() {
-        return mImpl.getHighSpeedVideoFpsRanges();
-    }
-
-    /** Get the frame per second ranges (fpsMin, fpsMax) for input high speed video size. */
-    @Nullable
-    public Range<Integer>[] getHighSpeedVideoFpsRangesFor(@NonNull Size size)
-            throws IllegalArgumentException {
-        return mImpl.getHighSpeedVideoFpsRangesFor(size);
-    }
-
-    /** Get a list of supported high speed video recording sizes. */
-    @Nullable
-    public Size[] getHighSpeedVideoSizes() {
-        return mImpl.getHighSpeedVideoSizes();
-    }
-
-    /** Get the supported video sizes for an input high speed FPS range. */
-    @Nullable
-    public Size[] getHighSpeedVideoSizesFor(@NonNull Range<Integer> fpsRange)
-            throws IllegalArgumentException {
-        return mImpl.getHighSpeedVideoSizesFor(fpsRange);
-    }
-
     /**
      * Returns the {@link StreamConfigurationMap} represented by this object.
      */
-    public @NonNull StreamConfigurationMap toStreamConfigurationMap() {
+    @NonNull
+    public StreamConfigurationMap toStreamConfigurationMap() {
         return mImpl.unwrap();
     }
 
     interface StreamConfigurationMapCompatImpl {
 
-        int @Nullable [] getOutputFormats();
-
-        Size @Nullable [] getOutputSizes(int format);
-
-        <T> Size @Nullable [] getOutputSizes(@NonNull Class<T> klass);
-
-        Size @Nullable [] getHighResolutionOutputSizes(int format);
+        @Nullable
+        int[] getOutputFormats();
 
         @Nullable
-        Range<Integer>[] getHighSpeedVideoFpsRanges();
+        Size[] getOutputSizes(int format);
 
         @Nullable
-        Range<Integer>[] getHighSpeedVideoFpsRangesFor(@NonNull Size size)
-                throws IllegalArgumentException;
+        <T> Size[] getOutputSizes(@NonNull Class<T> klass);
 
         @Nullable
-        Size[] getHighSpeedVideoSizes();
-
-        @Nullable
-        Size[] getHighSpeedVideoSizesFor(@NonNull Range<Integer> fpsRange)
-                throws IllegalArgumentException;
+        Size[] getHighResolutionOutputSizes(int format);
 
         /**
          * Returns the underlying {@link StreamConfigurationMap} instance.
          */
-        @NonNull StreamConfigurationMap unwrap();
+        @NonNull
+        StreamConfigurationMap unwrap();
     }
 }

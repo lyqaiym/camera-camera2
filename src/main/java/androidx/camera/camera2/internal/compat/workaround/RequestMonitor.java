@@ -22,6 +22,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.Camera2CaptureCallbacks;
 import androidx.camera.camera2.internal.compat.quirk.CaptureNoResponseQuirk;
 import androidx.camera.camera2.internal.compat.quirk.CaptureSessionStuckQuirk;
@@ -32,8 +33,6 @@ import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -87,7 +86,8 @@ public class RequestMonitor {
      * processed.
      */
     @ExecutedBy("mExecutor")
-    public @NonNull ListenableFuture<Void> getRequestsProcessedFuture() {
+    @NonNull
+    public ListenableFuture<Void> getRequestsProcessedFuture() {
         if (mRequestTasks.isEmpty()) {
             return Futures.immediateFuture(null);
         }
@@ -115,8 +115,9 @@ public class RequestMonitor {
      * `RequestMonitor`.
      */
     @ExecutedBy("mExecutor")
-    public CameraCaptureSession.@NonNull CaptureCallback createMonitorListener(
-            CameraCaptureSession.@NonNull CaptureCallback originalListener) {
+    @NonNull
+    public CameraCaptureSession.CaptureCallback createMonitorListener(
+            @NonNull CameraCaptureSession.CaptureCallback originalListener) {
         if (shouldMonitorRequest()) {
             return Camera2CaptureCallbacks.createComboCallback(createMonitorListener(),
                     originalListener);
@@ -148,7 +149,8 @@ public class RequestMonitor {
     }
 
     static class RequestCompleteListener extends CameraCaptureSession.CaptureCallback {
-        final @NonNull ListenableFuture<Void> mStartRequestFuture;
+        @NonNull
+        final ListenableFuture<Void> mStartRequestFuture;
         @SuppressWarnings("WeakerAccess") /* synthetic accessor */
         CallbackToFutureAdapter.Completer<Void> mStartRequestCompleter;
 

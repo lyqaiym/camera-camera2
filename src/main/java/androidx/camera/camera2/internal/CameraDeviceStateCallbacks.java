@@ -18,7 +18,7 @@ package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CameraDevice;
 
-import org.jspecify.annotations.NonNull;
+import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,14 +34,16 @@ public final class CameraDeviceStateCallbacks {
     /**
      * Returns a device state callback which does nothing.
      */
-    public static CameraDevice.@NonNull StateCallback createNoOpCallback() {
+    @NonNull
+    public static CameraDevice.StateCallback createNoOpCallback() {
         return new NoOpDeviceStateCallback();
     }
 
     /**
      * Returns a device state callback which calls a list of other callbacks.
      */
-    public static CameraDevice.@NonNull StateCallback createComboCallback(
+    @NonNull
+    public static CameraDevice.StateCallback createComboCallback(
             @NonNull List<CameraDevice.StateCallback> callbacks) {
         if (callbacks.isEmpty()) {
             return createNoOpCallback();
@@ -54,8 +56,9 @@ public final class CameraDeviceStateCallbacks {
     /**
      * Returns a device state callback which calls a list of other callbacks.
      */
-    public static CameraDevice.@NonNull StateCallback createComboCallback(
-            CameraDevice.StateCallback @NonNull ... callbacks) {
+    @NonNull
+    public static CameraDevice.StateCallback createComboCallback(
+            @NonNull CameraDevice.StateCallback... callbacks) {
         return createComboCallback(Arrays.asList(callbacks));
     }
 

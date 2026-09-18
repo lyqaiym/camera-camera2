@@ -18,10 +18,9 @@ package androidx.camera.camera2.internal.compat;
 
 import android.hardware.camera2.CameraCharacteristics;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -33,8 +32,9 @@ class CameraCharacteristicsApi28Impl extends CameraCharacteristicsBaseImpl{
         super(cameraCharacteristics);
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<String> getPhysicalCameraIds() {
+    public Set<String> getPhysicalCameraIds() {
         try {
             return mCameraCharacteristics.getPhysicalCameraIds();
         } catch (Exception e) {

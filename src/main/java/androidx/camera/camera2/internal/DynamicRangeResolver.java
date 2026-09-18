@@ -27,6 +27,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.os.Build;
 import android.text.TextUtils;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.params.DynamicRangeConversions;
@@ -36,9 +38,6 @@ import androidx.camera.core.Logger;
 import androidx.camera.core.impl.AttachedSurfaceInfo;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -211,7 +210,8 @@ final class DynamicRangeResolver {
      *
      * <p>If no suitable dynamic range can be found, returns {@code null}.
      */
-    private @Nullable DynamicRange resolveDynamicRange(
+    @Nullable
+    private DynamicRange resolveDynamicRange(
             @NonNull DynamicRange requestedDynamicRange,
             @NonNull Set<DynamicRange> combinedConstraints,
             @NonNull Set<DynamicRange> orderedExistingDynamicRanges,
@@ -375,7 +375,8 @@ final class DynamicRangeResolver {
         }
     }
 
-    private static @Nullable DynamicRange findSupportedHdrMatch(@NonNull DynamicRange rangeToMatch,
+    @Nullable
+    private static DynamicRange findSupportedHdrMatch(@NonNull DynamicRange rangeToMatch,
             @NonNull Collection<DynamicRange> fullySpecifiedCandidateRanges,
             @NonNull Set<DynamicRange> constraints) {
         // SDR can never match with HDR
@@ -407,7 +408,8 @@ final class DynamicRangeResolver {
             // This class is not instantiable.
         }
 
-        static @Nullable DynamicRange getRecommended10BitDynamicRange(
+        @Nullable
+        static DynamicRange getRecommended10BitDynamicRange(
                 @NonNull CameraCharacteristicsCompat characteristics) {
             Long recommendedProfile =
                     characteristics.get(REQUEST_RECOMMENDED_TEN_BIT_DYNAMIC_RANGE_PROFILE);

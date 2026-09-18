@@ -18,6 +18,8 @@ package androidx.camera.camera2.interop;
 
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -27,9 +29,6 @@ import androidx.camera.core.impl.MutableConfig;
 import androidx.camera.core.impl.MutableOptionsBundle;
 import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.ReadableConfig;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A bundle of Camera2 capture request options.
@@ -58,8 +57,8 @@ public class CaptureRequestOptions implements ReadableConfig {
      * @return The stored value or null if the value does not exist in this
      * configuration.
      */
-    public <ValueT> @Nullable ValueT getCaptureRequestOption(
-            CaptureRequest.@NonNull Key<ValueT> key) {
+    @Nullable
+    public <ValueT> ValueT getCaptureRequestOption(@NonNull CaptureRequest.Key<ValueT> key) {
         @SuppressWarnings(
                 "unchecked") // Type should have been only set via Builder#setCaptureRequestOption()
                 Option<ValueT> opt = (Option<ValueT>) Camera2ImplConfig.createCaptureRequestOption(
@@ -77,8 +76,9 @@ public class CaptureRequestOptions implements ReadableConfig {
      * configuration.
      */
     @RestrictTo(Scope.LIBRARY)
-    public <ValueT> @Nullable ValueT getCaptureRequestOption(
-            CaptureRequest.@NonNull Key<ValueT> key, @Nullable ValueT valueIfMissing) {
+    @Nullable
+    public <ValueT> ValueT getCaptureRequestOption(
+            @NonNull CaptureRequest.Key<ValueT> key, @Nullable ValueT valueIfMissing) {
         @SuppressWarnings(
                 "unchecked") // Type should have been only set via Builder#setCaptureRequestOption()
                 Option<ValueT> opt = (Option<ValueT>) Camera2ImplConfig.createCaptureRequestOption(
@@ -91,8 +91,9 @@ public class CaptureRequestOptions implements ReadableConfig {
      *
      */
     @RestrictTo(Scope.LIBRARY)
+    @NonNull
     @Override
-    public @NonNull Config getConfig() {
+    public Config getConfig() {
         return mConfig;
     }
 
@@ -110,7 +111,8 @@ public class CaptureRequestOptions implements ReadableConfig {
          * @return The new Builder.
          */
         @RestrictTo(Scope.LIBRARY)
-        public static CaptureRequestOptions.@NonNull Builder from(@NonNull Config config) {
+        @NonNull
+        public static CaptureRequestOptions.Builder from(@NonNull Config config) {
             CaptureRequestOptions.Builder bundleBuilder = new CaptureRequestOptions.Builder();
             config.findOptions(
                     Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM,
@@ -134,15 +136,17 @@ public class CaptureRequestOptions implements ReadableConfig {
          */
         @RestrictTo(Scope.LIBRARY)
         @Override
-        public @NonNull MutableConfig getMutableConfig() {
+        @NonNull
+        public MutableConfig getMutableConfig() {
             return mMutableOptionsBundle;
         }
 
         /**
          * Inserts new capture request option with specific {@link CaptureRequest.Key} setting.
          */
-        public <ValueT> CaptureRequestOptions.@NonNull Builder setCaptureRequestOption(
-                CaptureRequest.@NonNull Key<ValueT> key, @NonNull ValueT value) {
+        @NonNull
+        public <ValueT> CaptureRequestOptions.Builder setCaptureRequestOption(
+                @NonNull CaptureRequest.Key<ValueT> key, @NonNull ValueT value) {
             Option<Object> opt = Camera2ImplConfig.createCaptureRequestOption(key);
             mMutableOptionsBundle.insertOption(opt, value);
             return this;
@@ -151,8 +155,9 @@ public class CaptureRequestOptions implements ReadableConfig {
         /**
          * Removes a capture request option with specific {@link CaptureRequest.Key} setting.
          */
-        public <ValueT> CaptureRequestOptions.@NonNull Builder clearCaptureRequestOption(
-                CaptureRequest.@NonNull Key<ValueT> key) {
+        @NonNull
+        public <ValueT> CaptureRequestOptions.Builder clearCaptureRequestOption(
+                @NonNull CaptureRequest.Key<ValueT> key) {
             Config.Option<Object> opt = Camera2ImplConfig.createCaptureRequestOption(key);
             mMutableOptionsBundle.removeOption(opt);
             return this;
@@ -165,7 +170,8 @@ public class CaptureRequestOptions implements ReadableConfig {
          * @return A {@link CaptureRequestOptions} populated with the current state.
          */
         @Override
-        public @NonNull CaptureRequestOptions build() {
+        @NonNull
+        public CaptureRequestOptions build() {
             return new CaptureRequestOptions(OptionsBundle.from(mMutableOptionsBundle));
         }
     }

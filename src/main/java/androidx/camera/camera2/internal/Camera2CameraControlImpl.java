@@ -16,8 +16,6 @@
 
 package androidx.camera.camera2.internal;
 
-import static android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY;
-
 import static androidx.camera.core.ImageCapture.FLASH_MODE_AUTO;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_OFF;
 import static androidx.camera.core.ImageCapture.FLASH_MODE_ON;
@@ -34,12 +32,14 @@ import android.util.ArrayMap;
 import android.util.Rational;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
+import androidx.camera.camera2.internal.compat.workaround.AeFpsRange;
 import androidx.camera.camera2.internal.compat.workaround.AutoFlashAEModeDisabler;
 import androidx.camera.camera2.interop.Camera2CameraControl;
 import androidx.camera.camera2.interop.CaptureRequestOptions;
@@ -67,9 +67,6 @@ import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,7 +124,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     private final FocusMeteringControl mFocusMeteringControl;
     private final ZoomControl mZoomControl;
     private final TorchControl mTorchControl;
-    private final LowLightBoostControl mLowLightBoostControl;
     private final ExposureControl mExposureControl;
     @VisibleForTesting
     ZslControl mZslControl;
@@ -140,20 +136,18 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     private ImageCapture.ScreenFlash mScreenFlash;
 
     // use volatile modifier to make these variables in sync in all threads.
-    @TorchControl.TorchStateInternal
-    private volatile int mTorchState = TorchControl.OFF;
-    @IntRange(from = 1)
-    private volatile int mTorchStrength;
-    private volatile boolean mIsLowLightBoostOn = false;
+    private volatile boolean mIsTorchOn = false;
     @ImageCapture.FlashMode
     private volatile int mFlashMode = FLASH_MODE_OFF;
 
     // Workarounds
+    private final AeFpsRange mAeFpsRange;
     private final AutoFlashAEModeDisabler mAutoFlashAEModeDisabler;
 
     static final String TAG_SESSION_UPDATE_ID = "CameraControlSessionUpdateId";
     private final AtomicLong mNextSessionUpdateId = new AtomicLong(0);
-    private volatile @NonNull ListenableFuture<Void> mFlashModeChangeSessionUpdateFuture =
+    @NonNull
+    private volatile ListenableFuture<Void> mFlashModeChangeSessionUpdateFuture =
             Futures.immediateFuture(null);
 
     //******************** Should only be accessed by executor *****************************//
@@ -167,7 +161,7 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     @VisibleForTesting
     Camera2CameraControlImpl(@NonNull CameraCharacteristicsCompat cameraCharacteristics,
             @NonNull ScheduledExecutorService scheduler,
-            @CameraExecutor @NonNull Executor executor,
+            @NonNull @CameraExecutor Executor executor,
             @NonNull ControlUpdateCallback controlUpdateCallback) {
         this(cameraCharacteristics, scheduler, executor, controlUpdateCallback,
                 new Quirks(new ArrayList<>()));
@@ -188,9 +182,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
      */
     Camera2CameraControlImpl(@NonNull CameraCharacteristicsCompat cameraCharacteristics,
             @NonNull ScheduledExecutorService scheduler,
-            @CameraExecutor @NonNull Executor executor,
+            @NonNull @CameraExecutor Executor executor,
             @NonNull ControlUpdateCallback controlUpdateCallback,
-            final @NonNull Quirks cameraQuirks) {
+            @NonNull final Quirks cameraQuirks) {
         mCameraCharacteristics = cameraCharacteristics;
         mControlUpdateCallback = controlUpdateCallback;
         mExecutor = executor;
@@ -209,15 +203,14 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
                 this, scheduler, mExecutor, cameraQuirks);
         mZoomControl = new ZoomControl(this, mCameraCharacteristics, mExecutor);
         mTorchControl = new TorchControl(this, mCameraCharacteristics, mExecutor);
-        mTorchStrength = mCameraCharacteristics.getDefaultTorchStrengthLevel();
-        mLowLightBoostControl = new LowLightBoostControl(this, mCameraCharacteristics, mExecutor);
         if (Build.VERSION.SDK_INT >= 23) {
-            mZslControl = new ZslControlImpl(mCameraCharacteristics, mExecutor);
+            mZslControl = new ZslControlImpl(mCameraCharacteristics);
         } else {
             mZslControl = new ZslControlNoOpImpl();
         }
 
         // Workarounds
+        mAeFpsRange = new AeFpsRange(cameraQuirks);
         mAutoFlashAEModeDisabler = new AutoFlashAEModeDisabler(cameraQuirks);
         mCamera2CameraControl = new Camera2CameraControl(this, mExecutor);
         mCamera2CapturePipeline = new Camera2CapturePipeline(this, mCameraCharacteristics,
@@ -260,31 +253,33 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         }
     }
 
-    public @NonNull ZoomControl getZoomControl() {
+    @NonNull
+    public ZoomControl getZoomControl() {
         return mZoomControl;
     }
 
-    public @NonNull FocusMeteringControl getFocusMeteringControl() {
+    @NonNull
+    public FocusMeteringControl getFocusMeteringControl() {
         return mFocusMeteringControl;
     }
 
-    public @NonNull TorchControl getTorchControl() {
+    @NonNull
+    public TorchControl getTorchControl() {
         return mTorchControl;
     }
 
-    public @NonNull LowLightBoostControl getLowLightBoostControl() {
-        return mLowLightBoostControl;
-    }
-
-    public @NonNull ExposureControl getExposureControl() {
+    @NonNull
+    public ExposureControl getExposureControl() {
         return mExposureControl;
     }
 
-    public @NonNull ZslControl getZslControl() {
+    @NonNull
+    public ZslControl getZslControl() {
         return mZslControl;
     }
 
-    public @NonNull Camera2CameraControl getCamera2CameraControl() {
+    @NonNull
+    public Camera2CameraControl getCamera2CameraControl() {
         return mCamera2CameraControl;
     }
 
@@ -303,8 +298,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         }, CameraXExecutors.directExecutor());
     }
 
+    @NonNull
     @Override
-    public @NonNull Config getInteropConfig() {
+    public Config getInteropConfig() {
         return mCamera2CameraControl.getCamera2ImplConfig();
     }
 
@@ -321,7 +317,6 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         Logger.d(TAG, "setActive: isActive = " + isActive);
         mFocusMeteringControl.setActive(isActive);
         mZoomControl.setActive(isActive);
-        mLowLightBoostControl.setActive(isActive);
         mTorchControl.setActive(isActive);
         mExposureControl.setActive(isActive);
         mCamera2CameraControl.setActive(isActive);
@@ -339,8 +334,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         mFocusMeteringControl.setPreviewAspectRatio(previewAspectRatio);
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<FocusMeteringResult> startFocusAndMetering(
+    public ListenableFuture<FocusMeteringResult> startFocusAndMetering(
             @NonNull FocusMeteringAction action) {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
@@ -350,8 +346,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
                 mFocusMeteringControl.startFocusAndMetering(action));
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Void> cancelFocusAndMetering() {
+    public ListenableFuture<Void> cancelFocusAndMetering() {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
@@ -359,8 +356,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         return Futures.nonCancellationPropagating(mFocusMeteringControl.cancelFocusAndMetering());
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Void> setZoomRatio(float ratio) {
+    public ListenableFuture<Void> setZoomRatio(float ratio) {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
@@ -368,8 +366,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         return Futures.nonCancellationPropagating(mZoomControl.setZoomRatio(ratio));
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Void> setLinearZoom(float linearZoom) {
+    public ListenableFuture<Void> setLinearZoom(float linearZoom) {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
@@ -410,18 +409,14 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         mScreenFlash = screenFlash;
     }
 
-    public @Nullable ScreenFlash getScreenFlash() {
+    @Nullable
+    public ScreenFlash getScreenFlash() {
         return mScreenFlash;
     }
 
     @Override
-    public void addZslConfig(SessionConfig.@NonNull Builder sessionConfigBuilder) {
+    public void addZslConfig(@NonNull SessionConfig.Builder sessionConfigBuilder) {
         mZslControl.addZslConfig(sessionConfigBuilder);
-    }
-
-    @Override
-    public void clearZslConfig() {
-        mZslControl.clearZslConfig();
     }
 
     @Override
@@ -436,7 +431,8 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
 
     /** {@inheritDoc} */
     @Override
-    public @NonNull ListenableFuture<Void> enableTorch(final boolean torch) {
+    @NonNull
+    public ListenableFuture<Void> enableTorch(final boolean torch) {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
@@ -444,25 +440,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         return Futures.nonCancellationPropagating(mTorchControl.enableTorch(torch));
     }
 
-    @Override
     @ExecutedBy("mExecutor")
-    public void setLowLightBoostDisabledByUseCaseSessionConfig(boolean disabled) {
-        mLowLightBoostControl.setLowLightBoostDisabledByUseCaseSessionConfig(disabled);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public @NonNull ListenableFuture<Void> enableLowLightBoostAsync(final boolean lowLightBoost) {
-        if (!isControlInUse()) {
-            return Futures.immediateFailedFuture(
-                    new OperationCanceledException("Camera is not active."));
-        }
-        return Futures.nonCancellationPropagating(
-                mLowLightBoostControl.enableLowLightBoost(lowLightBoost));
-    }
-
-    @ExecutedBy("mExecutor")
-    private @NonNull ListenableFuture<Void> waitForSessionUpdateId(long sessionUpdateIdToWait) {
+    @NonNull
+    private ListenableFuture<Void> waitForSessionUpdateId(long sessionUpdateIdToWait) {
         return CallbackToFutureAdapter.getFuture(completer -> {
             addCaptureResultListener(captureResult -> {
                 boolean updated = isSessionUpdated(captureResult, sessionUpdateIdToWait);
@@ -500,8 +480,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         return false;
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Integer> setExposureCompensationIndex(int exposure) {
+    public ListenableFuture<Integer> setExposureCompensationIndex(int exposure) {
         if (!isControlInUse()) {
             return Futures.immediateFailedFuture(
                     new OperationCanceledException("Camera is not active."));
@@ -509,37 +490,10 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         return mExposureControl.setExposureCompensationIndex(exposure);
     }
 
-    @Override
-    public @NonNull ListenableFuture<Void> setTorchStrengthLevel(
-            @IntRange(from = 1) int torchStrengthLevel) {
-        if (!isControlInUse()) {
-            return Futures.immediateFailedFuture(
-                    new OperationCanceledException("Camera is not active."));
-        }
-        if (!mCameraCharacteristics.isTorchStrengthLevelSupported()) {
-            return Futures.immediateFailedFuture(new UnsupportedOperationException(
-                    "The device doesn't support configuring torch strength level."));
-        }
-        if (torchStrengthLevel < 1
-                || torchStrengthLevel > mCameraCharacteristics.getMaxTorchStrengthLevel()) {
-            return Futures.immediateFailedFuture(new IllegalArgumentException(
-                    "The specified torch strength is not within the valid range."));
-        }
-        return Futures.nonCancellationPropagating(mTorchControl.setTorchStrengthLevel(
-                Math.min(torchStrengthLevel, mCameraCharacteristics.getMaxTorchStrengthLevel())));
-    }
-
-    @ExecutedBy("mExecutor")
-    void setTorchStrengthLevelInternal(@IntRange(from = 1) int torchStrengthLevel) {
-        mTorchStrength = torchStrengthLevel;
-        if (isTorchOn()) {
-            updateSessionConfigSynchronous();
-        }
-    }
-
     /** {@inheritDoc} */
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<List<Void>> submitStillCaptureRequests(
+    public ListenableFuture<List<Void>> submitStillCaptureRequests(
             @NonNull List<CaptureConfig> captureConfigs,
             @ImageCapture.CaptureMode int captureMode,
             @ImageCapture.FlashType int flashType) {
@@ -559,8 +513,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
                         flashMode, flashType), mExecutor);
     }
 
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<CameraCapturePipeline> getCameraCapturePipelineAsync(
+    public ListenableFuture<CameraCapturePipeline> getCameraCapturePipelineAsync(
             @ImageCapture.CaptureMode int captureMode, @ImageCapture.FlashType int flashType) {
         if (!isControlInUse()) {
             Logger.w(TAG, "Camera is not active.");
@@ -581,8 +536,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
 
     /** {@inheritDoc} */
     @Override
+    @NonNull
     @ExecutedBy("mExecutor")
-    public @NonNull SessionConfig getSessionConfig() {
+    public SessionConfig getSessionConfig() {
         mSessionConfigBuilder.setTemplateType(mTemplate);
         mSessionConfigBuilder.setImplementationOptions(getSessionOptions());
         mSessionConfigBuilder.addTag(TAG_SESSION_UPDATE_ID, mCurrentSessionUpdateId);
@@ -617,7 +573,8 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
      * Triggers an update to the session and returns a ListenableFuture which completes when the
      * session is updated successfully.
      */
-    public @NonNull ListenableFuture<Void> updateSessionConfigAsync() {
+    @NonNull
+    public ListenableFuture<Void> updateSessionConfigAsync() {
         ListenableFuture<Void> future = CallbackToFutureAdapter.getFuture(completer -> {
             mExecutor.execute(() -> {
                 long sessionUpdateId = updateSessionConfigSynchronous();
@@ -645,13 +602,15 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
     }
 
     @ExecutedBy("mExecutor")
-    @NonNull Rect getCropSensorRegion() {
+    @NonNull
+    Rect getCropSensorRegion() {
         return mZoomControl.getCropSensorRegion();
     }
 
     @Override
     @ExecutedBy("mExecutor")
-    public @NonNull Rect getSensorRect() {
+    @NonNull
+    public Rect getSensorRect() {
         Rect sensorRect =
                 mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
         if ("robolectric".equals(Build.FINGERPRINT) && sensorRect == null) {
@@ -687,64 +646,28 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     @ExecutedBy("mExecutor")
-    void enableTorchInternal(@TorchControl.TorchStateInternal int torchState) {
-        // When low-light boost is on, any torch related operations will be ignored.
-        if (mIsLowLightBoostOn) {
-            return;
-        }
-
-        mTorchState = torchState;
-        if (torchState == TorchControl.OFF) {
-            // On some devices, needs to reset the AE/flash state to ensure that the torch can be
-            // turned off.
-            resetAeFlashState();
+    void enableTorchInternal(boolean torch) {
+        mIsTorchOn = torch;
+        if (!torch) {
+            // Send capture request with AE_MODE_ON + FLASH_MODE_OFF to turn off torch.
+            CaptureConfig.Builder singleRequestBuilder = new CaptureConfig.Builder();
+            singleRequestBuilder.setTemplateType(mTemplate);
+            singleRequestBuilder.setUseRepeatingSurface(true);
+            Camera2ImplConfig.Builder configBuilder = new Camera2ImplConfig.Builder();
+            configBuilder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
+                    getSupportedAeMode(CaptureRequest.CONTROL_AE_MODE_ON));
+            configBuilder.setCaptureRequestOption(CaptureRequest.FLASH_MODE,
+                    CaptureRequest.FLASH_MODE_OFF);
+            singleRequestBuilder.addImplementationOptions(configBuilder.build());
+            submitCaptureRequestsInternal(
+                    Collections.singletonList(singleRequestBuilder.build()));
         }
         updateSessionConfigSynchronous();
-    }
-
-    @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    @ExecutedBy("mExecutor")
-    void enableLowLightBoostInternal(boolean lowLightBoost) {
-        if (mIsLowLightBoostOn == lowLightBoost) {
-            return;
-        }
-
-        // Forces turn off torch before enabling low-light boost.
-        if (lowLightBoost && isTorchOn()) {
-            // On some devices, needs to reset the AE/flash state to ensure that the torch can be
-            // turned off.
-            resetAeFlashState();
-            mTorchState = TorchControl.OFF;
-            mTorchControl.forceUpdateTorchStateToOff();
-        }
-
-        mIsLowLightBoostOn = lowLightBoost;
-        updateSessionConfigSynchronous();
-    }
-
-    private void resetAeFlashState() {
-        // Send capture request with AE_MODE_ON + FLASH_MODE_OFF to reset the AE/flash state.
-        CaptureConfig.Builder singleRequestBuilder = new CaptureConfig.Builder();
-        singleRequestBuilder.setTemplateType(mTemplate);
-        singleRequestBuilder.setUseRepeatingSurface(true);
-        Camera2ImplConfig.Builder configBuilder = new Camera2ImplConfig.Builder();
-        configBuilder.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE,
-                getSupportedAeMode(CaptureRequest.CONTROL_AE_MODE_ON));
-        configBuilder.setCaptureRequestOption(CaptureRequest.FLASH_MODE,
-                CaptureRequest.FLASH_MODE_OFF);
-        singleRequestBuilder.addImplementationOptions(configBuilder.build());
-        submitCaptureRequestsInternal(
-                Collections.singletonList(singleRequestBuilder.build()));
     }
 
     @ExecutedBy("mExecutor")
     boolean isTorchOn() {
-        return mTorchState != TorchControl.OFF;
-    }
-
-    @ExecutedBy("mExecutor")
-    boolean isLowLightBoostOn() {
-        return mIsLowLightBoostOn;
+        return mIsTorchOn;
     }
 
     @ExecutedBy("mExecutor")
@@ -768,6 +691,8 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         // AF Mode is assigned in mFocusMeteringControl.
         mFocusMeteringControl.addFocusMeteringOptions(builder);
 
+        mAeFpsRange.addAeFpsRangeOptions(builder);
+
         mZoomControl.addZoomOption(builder);
 
         int aeMode = CaptureRequest.CONTROL_AE_MODE_ON;
@@ -777,22 +702,9 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
             aeMode = CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH;
         }
 
-        if (mIsLowLightBoostOn) {
-            aeMode = CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY;
-        } else if (isTorchOn()) {
+        if (mIsTorchOn) {
             builder.setCaptureRequestOptionWithPriority(CaptureRequest.FLASH_MODE,
                     CaptureRequest.FLASH_MODE_TORCH, Config.OptionPriority.REQUIRED);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                if (mTorchState == TorchControl.ON) {
-                    builder.setCaptureRequestOptionWithPriority(CaptureRequest.FLASH_STRENGTH_LEVEL,
-                            mTorchStrength, Config.OptionPriority.REQUIRED);
-                } else if (mTorchState == TorchControl.USED_AS_FLASH) {
-                    // If torch is used as flash, use the default torch strength instead.
-                    builder.setCaptureRequestOptionWithPriority(CaptureRequest.FLASH_STRENGTH_LEVEL,
-                            mCameraCharacteristics.getDefaultTorchStrengthLevel(),
-                            Config.OptionPriority.REQUIRED);
-                }
-            }
         } else {
             switch (mFlashMode) {
                 case FLASH_MODE_OFF:
@@ -989,7 +901,7 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         @CameraExecutor
         private final Executor mExecutor;
 
-        CameraControlSessionCallback(@CameraExecutor @NonNull Executor executor) {
+        CameraControlSessionCallback(@NonNull @CameraExecutor Executor executor) {
             mExecutor = executor;
         }
 
@@ -1007,7 +919,7 @@ public class Camera2CameraControlImpl implements CameraControlInternal {
         public void onCaptureCompleted(
                 @NonNull CameraCaptureSession session,
                 @NonNull CaptureRequest request,
-                final @NonNull TotalCaptureResult result) {
+                @NonNull final TotalCaptureResult result) {
 
             mExecutor.execute(() -> {
                 Set<CaptureResultListener> removeSet = new HashSet<>();

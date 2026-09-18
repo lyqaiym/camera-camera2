@@ -18,31 +18,35 @@ package androidx.camera.camera2.internal.compat;
 
 import android.hardware.camera2.CameraCharacteristics;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.Set;
 
 class CameraCharacteristicsBaseImpl
         implements CameraCharacteristicsCompat.CameraCharacteristicsCompatImpl {
-    protected final @NonNull CameraCharacteristics mCameraCharacteristics;
+    @NonNull
+    protected final CameraCharacteristics mCameraCharacteristics;
     CameraCharacteristicsBaseImpl(@NonNull CameraCharacteristics cameraCharacteristics) {
         mCameraCharacteristics = cameraCharacteristics;
     }
 
+    @Nullable
     @Override
-    public <T> @Nullable T get(CameraCharacteristics.@NonNull Key<T> key) {
+    public <T> T get(@NonNull CameraCharacteristics.Key<T> key) {
         return mCameraCharacteristics.get(key);
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<String> getPhysicalCameraIds() {
+    public Set<String> getPhysicalCameraIds() {
         return Collections.emptySet();
     }
 
+    @NonNull
     @Override
-    public @NonNull CameraCharacteristics unwrap() {
+    public CameraCharacteristics unwrap() {
         return mCameraCharacteristics;
     }
 }

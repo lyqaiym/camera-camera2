@@ -18,10 +18,9 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.util.Size;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.ExcludedSupportedSizesQuirk;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,8 @@ import java.util.List;
  */
 public class ExcludedSupportedSizesContainer {
 
-    private final @NonNull String mCameraId;
+    @NonNull
+    private final String mCameraId;
 
     /**
      * Constructs an instance of {@link ExcludedSupportedSizesContainer} that excludes supported
@@ -48,7 +48,8 @@ public class ExcludedSupportedSizesContainer {
      * Retrieves the supported surface sizes to exclude on the current device for the camera
      * identified by mCameraId and the specified image format.
      */
-    public @NonNull List<Size> get(int imageFormat) {
+    @NonNull
+    public List<Size> get(int imageFormat) {
         final ExcludedSupportedSizesQuirk quirk = DeviceQuirks.get(
                 ExcludedSupportedSizesQuirk.class);
         if (quirk == null) {
@@ -61,7 +62,8 @@ public class ExcludedSupportedSizesContainer {
      * Retrieves the supported surface sizes to exclude on the current device for the camera
      * identified by mCameraId and the specified class type.
      */
-    public @NonNull List<Size> get(@NonNull Class<?> klass) {
+    @NonNull
+    public List<Size> get(@NonNull Class<?> klass) {
         final ExcludedSupportedSizesQuirk quirk = DeviceQuirks.get(
                 ExcludedSupportedSizesQuirk.class);
         if (quirk == null) {

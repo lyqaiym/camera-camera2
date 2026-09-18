@@ -22,9 +22,8 @@ import static android.hardware.camera2.CameraMetadata.LENS_FACING_FRONT;
 import android.hardware.camera2.CameraDevice;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary

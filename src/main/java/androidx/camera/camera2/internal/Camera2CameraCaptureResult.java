@@ -20,6 +20,7 @@ import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureResult;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.CameraCaptureMetaData;
 import androidx.camera.core.impl.CameraCaptureMetaData.AeMode;
@@ -32,8 +33,6 @@ import androidx.camera.core.impl.CameraCaptureMetaData.FlashState;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.TagBundle;
 import androidx.camera.core.impl.utils.ExifData;
-
-import org.jspecify.annotations.NonNull;
 
 import java.nio.BufferUnderflowException;
 
@@ -61,8 +60,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link AfMode}.
      */
+    @NonNull
     @Override
-    public @NonNull AfMode getAfMode() {
+    public AfMode getAfMode() {
         Integer mode = mCaptureResult.get(CaptureResult.CONTROL_AF_MODE);
         if (mode == null) {
             return AfMode.UNKNOWN;
@@ -88,8 +88,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link AfState}.
      */
+    @NonNull
     @Override
-    public @NonNull AfState getAfState() {
+    public AfState getAfState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AF_STATE);
         if (state == null) {
             return AfState.UNKNOWN;
@@ -120,8 +121,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link AeState}.
      */
+    @NonNull
     @Override
-    public @NonNull AeState getAeState() {
+    public AeState getAeState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AE_STATE);
         if (state == null) {
             return AeState.UNKNOWN;
@@ -149,8 +151,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link AwbState}.
      */
+    @NonNull
     @Override
-    public @NonNull AwbState getAwbState() {
+    public AwbState getAwbState() {
         Integer state = mCaptureResult.get(CaptureResult.CONTROL_AWB_STATE);
         if (state == null) {
             return AwbState.UNKNOWN;
@@ -175,8 +178,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
      *
      * @return the {@link FlashState}.
      */
+    @NonNull
     @Override
-    public @NonNull FlashState getFlashState() {
+    public FlashState getFlashState() {
         Integer state = mCaptureResult.get(CaptureResult.FLASH_STATE);
         if (state == null) {
             return FlashState.UNKNOWN;
@@ -196,8 +200,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         return FlashState.UNKNOWN;
     }
 
+    @NonNull
     @Override
-    public CameraCaptureMetaData.@NonNull AeMode getAeMode() {
+    public CameraCaptureMetaData.AeMode getAeMode() {
         Integer aeMode = mCaptureResult.get(CaptureResult.CONTROL_AE_MODE);
         if (aeMode == null) {
             return AeMode.UNKNOWN;
@@ -224,8 +229,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         }
     }
 
+    @NonNull
     @Override
-    public CameraCaptureMetaData.@NonNull AwbMode getAwbMode() {
+    public CameraCaptureMetaData.AwbMode getAwbMode() {
         Integer awbMode = mCaptureResult.get(CaptureResult.CONTROL_AWB_MODE);
         if (awbMode == null) {
             return AwbMode.UNKNOWN;
@@ -265,13 +271,14 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         return timestamp;
     }
 
+    @NonNull
     @Override
-    public @NonNull TagBundle getTagBundle() {
+    public TagBundle getTagBundle() {
         return mTagBundle;
     }
 
     @Override
-    public void populateExifData(ExifData.@NonNull Builder exifData) {
+    public void populateExifData(@NonNull ExifData.Builder exifData) {
         // Call interface default to set flash mode
         CameraCaptureResult.super.populateExifData(exifData);
 
@@ -330,8 +337,9 @@ public class Camera2CameraCaptureResult implements CameraCaptureResult {
         }
     }
 
+    @NonNull
     @Override
-    public @NonNull CaptureResult getCaptureResult() {
+    public CaptureResult getCaptureResult() {
         return mCaptureResult;
     }
 }

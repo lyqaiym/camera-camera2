@@ -18,10 +18,9 @@ package androidx.camera.camera2.internal.compat.workaround;
 
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.camera2.internal.compat.quirk.StillCaptureFlashStopRepeatingQuirk;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 

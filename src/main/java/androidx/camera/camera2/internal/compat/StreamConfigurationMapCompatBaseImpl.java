@@ -19,15 +19,13 @@ package androidx.camera.camera2.internal.compat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
-import android.util.Range;
 import android.util.Size;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.ImageFormatConstants;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 class StreamConfigurationMapCompatBaseImpl
         implements StreamConfigurationMapCompat.StreamConfigurationMapCompatImpl {
@@ -40,8 +38,9 @@ class StreamConfigurationMapCompatBaseImpl
         mStreamConfigurationMap = map;
     }
 
+    @Nullable
     @Override
-    public int @Nullable [] getOutputFormats() {
+    public int[] getOutputFormats() {
         // b/361590210: try-catch to workaround the NullPointerException issue when using
         // StreamConfigurationMap provided by Robolectric.
         try {
@@ -52,8 +51,9 @@ class StreamConfigurationMapCompatBaseImpl
         }
     }
 
+    @Nullable
     @Override
-    public Size @Nullable [] getOutputSizes(int format) {
+    public Size[] getOutputSizes(int format) {
         Size[] sizes;
         if (format == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE) {
             // This is a little tricky that 0x22 that is internal defined in
@@ -68,43 +68,24 @@ class StreamConfigurationMapCompatBaseImpl
         return sizes;
     }
 
+    @Nullable
     @Override
-    public <T> Size @Nullable [] getOutputSizes(@NonNull Class<T> klass) {
+    public <T> Size[] getOutputSizes(@NonNull Class<T> klass) {
         return mStreamConfigurationMap.getOutputSizes(klass);
     }
 
+    @Nullable
     @Override
-    public Size @Nullable [] getHighResolutionOutputSizes(int format) {
+    public Size[] getHighResolutionOutputSizes(int format) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return Api23Impl.getHighResolutionOutputSizes(mStreamConfigurationMap, format);
         }
         return null;
     }
 
+    @NonNull
     @Override
-    public Range<Integer> @Nullable [] getHighSpeedVideoFpsRanges() {
-        return mStreamConfigurationMap.getHighSpeedVideoFpsRanges();
-    }
-
-    @Override
-    public Range<Integer> @Nullable [] getHighSpeedVideoFpsRangesFor(@NonNull Size size)
-            throws IllegalArgumentException {
-        return mStreamConfigurationMap.getHighSpeedVideoFpsRangesFor(size);
-    }
-
-    @Override
-    public Size @Nullable [] getHighSpeedVideoSizes() {
-        return mStreamConfigurationMap.getHighSpeedVideoSizes();
-    }
-
-    @Override
-    public Size @Nullable [] getHighSpeedVideoSizesFor(@NonNull Range<Integer> fpsRange)
-            throws IllegalArgumentException {
-        return mStreamConfigurationMap.getHighSpeedVideoSizesFor(fpsRange);
-    }
-
-    @Override
-    public @NonNull StreamConfigurationMap unwrap() {
+    public StreamConfigurationMap unwrap() {
         return mStreamConfigurationMap;
     }
 

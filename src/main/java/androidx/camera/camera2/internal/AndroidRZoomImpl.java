@@ -22,6 +22,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.TotalCaptureResult;
 import android.util.Range;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -32,8 +33,6 @@ import androidx.camera.core.CameraControl;
 import androidx.camera.core.impl.Config;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
 
 @RequiresApi(30)
 final class AndroidRZoomImpl implements ZoomControl.ZoomImpl {
@@ -64,7 +63,7 @@ final class AndroidRZoomImpl implements ZoomControl.ZoomImpl {
 
     @OptIn(markerClass = ExperimentalCamera2Interop.class)
     @Override
-    public void addRequestOption(Camera2ImplConfig.@NonNull Builder builder) {
+    public void addRequestOption(@NonNull Camera2ImplConfig.Builder builder) {
         builder.setCaptureRequestOptionWithPriority(CaptureRequest.CONTROL_ZOOM_RATIO,
                 mCurrentZoomRatio, Config.OptionPriority.REQUIRED);
         if (mShouldOverrideZoom) {
@@ -88,7 +87,7 @@ final class AndroidRZoomImpl implements ZoomControl.ZoomImpl {
 
     @Override
     public void setZoomRatio(float zoomRatio,
-            CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
+            @NonNull CallbackToFutureAdapter.Completer<Void> completer) {
         mCurrentZoomRatio = zoomRatio;
 
         if (mPendingZoomRatioCompleter != null) {
@@ -121,8 +120,9 @@ final class AndroidRZoomImpl implements ZoomControl.ZoomImpl {
         }
     }
 
+    @NonNull
     @Override
-    public @NonNull Rect getCropSensorRegion() {
+    public Rect getCropSensorRegion() {
         return Preconditions.checkNotNull(
                 mCameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE));
     }

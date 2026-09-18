@@ -59,10 +59,11 @@ import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
-import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
 import androidx.camera.camera2.internal.util.SemaphoreReleasingCamera2Callbacks;
@@ -70,10 +71,8 @@ import androidx.camera.camera2.interop.Camera2Interop;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.CompositionSettings;
-import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ImageCapture;
-import androidx.camera.core.MirrorMode;
+import androidx.camera.core.LayoutSettings;
 import androidx.camera.core.Preview;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.CameraCaptureCallback;
@@ -110,8 +109,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -745,7 +742,7 @@ public final class Camera2CameraImplTest {
         Observable.Observer<CameraInternal.State> observer =
                 new Observable.Observer<CameraInternal.State>() {
                     @Override
-                    public void onNewData(CameraInternal.@Nullable State value) {
+                    public void onNewData(@Nullable CameraInternal.State value) {
                         // Ignore any transient states.
                         if (STABLE_STATES.contains(value)) {
                             lastStableState.set(value);
@@ -901,47 +898,41 @@ public final class Camera2CameraImplTest {
         mSemaphore.release();
     }
 
-    private @NonNull TestUseCase createUseCase() {
+    @NonNull
+    private TestUseCase createUseCase() {
         return createUseCase(DEFAULT_TEMPLATE_TYPE);
     }
 
-    private @NonNull TestUseCase createUseCase(int template) {
+    @NonNull
+    private TestUseCase createUseCase(int template) {
         return createUseCase(template, DEFAULT_IMAGE_FORMAT);
     }
 
-    private @NonNull TestUseCase createUseCase(int template, int imageFormat) {
+    @NonNull
+    private TestUseCase createUseCase(int template, int imageFormat) {
         return createUseCase(template, DEFAULT_SURFACE_OPTION, imageFormat);
     }
 
-    private @NonNull TestUseCase createUseCase(@NonNull SurfaceOption surfaceOption) {
+    @NonNull
+    private TestUseCase createUseCase(@NonNull SurfaceOption surfaceOption) {
         return createUseCase(DEFAULT_TEMPLATE_TYPE, surfaceOption, DEFAULT_IMAGE_FORMAT);
     }
 
-    private @NonNull TestUseCase createUseCase(int template, @NonNull SurfaceOption surfaceOption,
+    @NonNull
+    private TestUseCase createUseCase(int template, @NonNull SurfaceOption surfaceOption,
             int imageFormat) {
-        return createUseCase(template, surfaceOption, imageFormat, null, null);
-    }
-
-    private @NonNull TestUseCase createUseCase(int template, @NonNull SurfaceOption surfaceOption,
-            int imageFormat, @Nullable Range<Integer> targetFpsRange,
-            @Nullable DynamicRange dynamicRange) {
         boolean isZslDisabled = getDefaultZslDisabled(template);
         FakeUseCaseConfig.Builder configBuilder =
                 new FakeUseCaseConfig.Builder().setSessionOptionUnpacker(
                                 new Camera2SessionOptionUnpacker()).setTargetName("UseCase")
                         .setZslDisabled(isZslDisabled);
-        if (targetFpsRange != null) {
-            configBuilder.setTargetFrameRate(targetFpsRange);
-        }
-        if (dynamicRange != null) {
-            configBuilder.setDynamicRange(dynamicRange);
-        }
         new Camera2Interop.Extender<>(configBuilder).setSessionStateCallback(mSessionStateCallback);
         return createUseCase(configBuilder.getUseCaseConfig(), template, surfaceOption,
                 imageFormat);
     }
 
-    private @NonNull TestUseCase createUseCase(@NonNull FakeUseCaseConfig config, int template,
+    @NonNull
+    private TestUseCase createUseCase(@NonNull FakeUseCaseConfig config, int template,
             @NonNull SurfaceOption surfaceOption, int imageFormat) {
         TestUseCase testUseCase = new TestUseCase(
                 template,
@@ -951,22 +942,17 @@ public final class Camera2CameraImplTest {
                 surfaceOption,
                 imageFormat
         );
-        StreamSpec.Builder builder = StreamSpec.builder(
+
+        testUseCase.updateSuggestedStreamSpec(StreamSpec.builder(
                 new Size(640, 480)).setImplementationOptions(
-                StreamUseCaseUtil.getStreamSpecImplementationOptions(config));
-        if (config.getTargetFrameRate(null) != null) {
-            builder.setExpectedFrameRateRange(config.getTargetFrameRate());
-        }
-        if (config.hasDynamicRange()) {
-            builder.setDynamicRange(config.getDynamicRange());
-        }
-        testUseCase.updateSuggestedStreamSpec(builder.build(),
+                StreamUseCaseUtil.getStreamSpecImplementationOptions(config)).build(),
                 null);
         mFakeUseCases.add(testUseCase);
         return testUseCase;
     }
 
-    private @NonNull ImageCapture createImageCapture() {
+    @NonNull
+    private ImageCapture createImageCapture() {
         UseCaseConfigFactory useCaseConfigFactory =
                 new Camera2UseCaseConfigFactory(ApplicationProvider.getApplicationContext());
 
@@ -992,14 +978,15 @@ public final class Camera2CameraImplTest {
         return imageCapture;
     }
 
-    private @NonNull StreamSharing createStreamSharingUseCase(@NonNull Set<UseCase> children) {
+    @NonNull
+    private StreamSharing createStreamSharingUseCase(@NonNull Set<UseCase> children) {
         UseCaseConfigFactory useCaseConfigFactory =
                 new Camera2UseCaseConfigFactory(ApplicationProvider.getApplicationContext());
 
         StreamSharing streamSharing =
                 new StreamSharing(mCamera2CameraImpl, null,
-                        CompositionSettings.DEFAULT,
-                        CompositionSettings.DEFAULT,
+                        LayoutSettings.DEFAULT,
+                        LayoutSettings.DEFAULT,
                         children, useCaseConfigFactory);
 
         FakeUseCaseConfig.Builder configBuilder =
@@ -1387,67 +1374,6 @@ public final class Camera2CameraImplTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 35)
-    @Test
-    public void lowLightBoostDisabled_whenFrameRateRangeExceed30() throws InterruptedException {
-        assumeTrue(mCamera2CameraImpl.getCameraInfo().isLowLightBoostSupported());
-        Set<Range<Integer>> supportedFrameRateRanges =
-                mCamera2CameraImpl.mCameraInfoInternal.getSupportedFrameRateRanges();
-        Range<Integer> fpsRangeExceed30 = null;
-        for (Range<Integer> fpsRange: supportedFrameRateRanges) {
-            if (fpsRange.getUpper() > 30) {
-                fpsRangeExceed30 = fpsRange;
-                break;
-            }
-        }
-        assumeTrue("The test only runs on devices that support frame rate range exceeding 30.",
-                fpsRangeExceed30 != null);
-
-        UseCase useCase = createUseCase(CameraDevice.TEMPLATE_PREVIEW, DEFAULT_SURFACE_OPTION,
-                DEFAULT_IMAGE_FORMAT, fpsRangeExceed30, null);
-
-        Camera2CameraControlImpl camera2CameraControlImpl =
-                (Camera2CameraControlImpl) mCamera2CameraImpl.getCameraControlInternal();
-        LowLightBoostControl lowLightBoostControl =
-                camera2CameraControlImpl.getLowLightBoostControl();
-
-        mCamera2CameraImpl.onUseCaseActive(useCase);
-        mCamera2CameraImpl.attachUseCases(singletonList(useCase));
-        HandlerUtil.waitForLooperToIdle(sCameraHandler);
-        assertThat(lowLightBoostControl.isLowLightBoostDisabledByUseCaseSessionConfig()).isTrue();
-    }
-
-    @SdkSuppress(minSdkVersion = 35)
-    @Test
-    public void lowLightBoostDisabled_whenHdr10BitEnabled() throws InterruptedException {
-        assumeTrue(mCamera2CameraImpl.getCameraInfo().isLowLightBoostSupported());
-
-        Set<DynamicRange> supportedDynamicRanges =
-                mCamera2CameraImpl.mCameraInfoInternal.getSupportedDynamicRanges();
-        DynamicRange hdr10BitDynamicRange = null;
-        for (DynamicRange dynamicRange: supportedDynamicRanges) {
-            if (dynamicRange != DynamicRange.SDR) {
-                hdr10BitDynamicRange = dynamicRange;
-                break;
-            }
-        }
-        assumeTrue("The test only runs on devices that support HDR 10-bit dynamic range.",
-                hdr10BitDynamicRange != null);
-
-        UseCase useCase = createUseCase(CameraDevice.TEMPLATE_PREVIEW, DEFAULT_SURFACE_OPTION,
-                DEFAULT_IMAGE_FORMAT, null, hdr10BitDynamicRange);
-
-        Camera2CameraControlImpl camera2CameraControlImpl =
-                (Camera2CameraControlImpl) mCamera2CameraImpl.getCameraControlInternal();
-        LowLightBoostControl lowLightBoostControl =
-                camera2CameraControlImpl.getLowLightBoostControl();
-
-        mCamera2CameraImpl.onUseCaseActive(useCase);
-        mCamera2CameraImpl.attachUseCases(singletonList(useCase));
-        HandlerUtil.waitForLooperToIdle(sCameraHandler);
-        assertThat(lowLightBoostControl.isLowLightBoostDisabledByUseCaseSessionConfig()).isTrue();
-    }
-
     private void changeUseCaseSurface(UseCase useCase) {
         useCase.updateSuggestedStreamSpec(StreamSpec.builder(
                 new Size(640, 480)).setImplementationOptions(
@@ -1522,7 +1448,8 @@ public final class Camera2CameraImplTest {
         }
 
         @Override
-        protected @NonNull StreamSpec onSuggestedStreamSpecUpdated(
+        @NonNull
+        protected StreamSpec onSuggestedStreamSpecUpdated(
                 @NonNull StreamSpec primaryStreamSpec,
                 @Nullable StreamSpec secondaryStreamSpec) {
             if (mDeferrableSurface != null) {
@@ -1533,8 +1460,6 @@ public final class Camera2CameraImplTest {
                     primaryStreamSpec.getResolution());
             mSessionConfigBuilder.setTemplateType(mTemplate);
             mSessionConfigBuilder.addRepeatingCameraCaptureCallback(mRepeatingCaptureCallback);
-            mSessionConfigBuilder.setExpectedFrameRateRange(
-                    primaryStreamSpec.getExpectedFrameRateRange());
             updateSessionBuilderBySurfaceOption();
             updateSessionConfig(List.of(mSessionConfigBuilder.build()));
             return primaryStreamSpec;
@@ -1555,19 +1480,16 @@ public final class Camera2CameraImplTest {
                 case NO_SURFACE:
                     break;
                 case REPEATING:
-                    mSessionConfigBuilder.addSurface(mDeferrableSurface,
-                            mConfig.hasDynamicRange() ? mConfig.getDynamicRange()
-                                    : DynamicRange.SDR, null, MirrorMode.MIRROR_MODE_UNSPECIFIED);
+                    mSessionConfigBuilder.addSurface(mDeferrableSurface);
                     break;
                 case NON_REPEATING:
-                    mSessionConfigBuilder.addNonRepeatingSurface(mDeferrableSurface,
-                            mConfig.hasDynamicRange() ? mConfig.getDynamicRange()
-                                    : DynamicRange.SDR);
+                    mSessionConfigBuilder.addNonRepeatingSurface(mDeferrableSurface);
                     break;
             }
         }
 
-        private @NonNull DeferrableSurface createDeferrableSurface(@NonNull StreamSpec streamSpec,
+        @NonNull
+        private DeferrableSurface createDeferrableSurface(@NonNull StreamSpec streamSpec,
                 int imageFormat) {
             Size suggestedResolution = streamSpec.getResolution();
             Surface surface;

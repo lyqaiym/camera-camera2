@@ -18,9 +18,8 @@ package androidx.camera.camera2.internal;
 
 import android.hardware.camera2.CaptureFailure;
 
+import androidx.annotation.NonNull;
 import androidx.camera.core.impl.CameraCaptureFailure;
-
-import org.jspecify.annotations.NonNull;
 
 /** The camera2 implementation for the capture failure */
 public final class Camera2CameraCaptureFailure extends CameraCaptureFailure {
@@ -31,8 +30,9 @@ public final class Camera2CameraCaptureFailure extends CameraCaptureFailure {
         mCaptureFailure = captureFailure;
     }
 
+    @NonNull
     @Override
-    public @NonNull Object getCaptureFailure() {
+    public Object getCaptureFailure() {
         return mCaptureFailure;
     }
 }

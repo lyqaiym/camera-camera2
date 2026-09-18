@@ -21,13 +21,12 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.CamcorderProfile;
 import android.util.Size;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.StreamConfigurationMapCompat;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.Quirk;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,7 +70,8 @@ public class CamcorderProfileResolutionQuirk implements Quirk {
     }
 
     /** Returns the supported video resolutions. */
-    public @NonNull List<Size> getSupportedResolutions() {
+    @NonNull
+    public List<Size> getSupportedResolutions() {
         if (mSupportedResolutions == null) {
             Size[] sizes = mStreamConfigurationMapCompat.getOutputSizes(
                     ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE);

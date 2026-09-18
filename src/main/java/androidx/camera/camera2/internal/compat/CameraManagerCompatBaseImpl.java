@@ -24,11 +24,10 @@ import android.hardware.camera2.CameraManager;
 import android.os.Handler;
 
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,8 +51,9 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
                 new CameraManagerCompatParamsApi21(compatHandler));
     }
 
+    @NonNull
     @Override
-    public String @NonNull [] getCameraIdList() throws CameraAccessExceptionCompat {
+    public String[] getCameraIdList() throws CameraAccessExceptionCompat {
         try {
             return mCameraManager.getCameraIdList();
         } catch (CameraAccessException e) {
@@ -61,14 +61,15 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
         }
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
+    public Set<Set<String>> getConcurrentCameraIds() throws CameraAccessExceptionCompat {
         return Collections.emptySet();
     }
 
     @Override
     public void registerAvailabilityCallback(@NonNull Executor executor,
-            CameraManager.@NonNull AvailabilityCallback callback) {
+            @NonNull CameraManager.AvailabilityCallback callback) {
         if (executor == null) {
             throw new IllegalArgumentException("executor was null");
         }
@@ -91,7 +92,7 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
 
     @Override
     public void unregisterAvailabilityCallback(
-            CameraManager.@NonNull AvailabilityCallback callback) {
+            @NonNull CameraManager.AvailabilityCallback callback) {
         CameraManagerCompat.AvailabilityCallbackExecutorWrapper wrapper = null;
         if (callback != null) {
             CameraManagerCompatParamsApi21 params = (CameraManagerCompatParamsApi21) mObject;
@@ -107,7 +108,8 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
     }
 
     @Override
-    public @NonNull CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
+    @NonNull
+    public CameraCharacteristics getCameraCharacteristics(@NonNull String cameraId)
             throws CameraAccessExceptionCompat {
         try {
             return mCameraManager.getCameraCharacteristics(cameraId);
@@ -119,7 +121,7 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
     @RequiresPermission(android.Manifest.permission.CAMERA)
     @Override
     public void openCamera(@NonNull String cameraId, @NonNull Executor executor,
-            CameraDevice.@NonNull StateCallback callback) throws CameraAccessExceptionCompat {
+            @NonNull CameraDevice.StateCallback callback) throws CameraAccessExceptionCompat {
         Preconditions.checkNotNull(executor);
         Preconditions.checkNotNull(callback);
 
@@ -135,8 +137,9 @@ class CameraManagerCompatBaseImpl implements CameraManagerCompat.CameraManagerCo
         }
     }
 
+    @NonNull
     @Override
-    public @NonNull CameraManager getCameraManager() {
+    public CameraManager getCameraManager() {
         return mCameraManager;
     }
 

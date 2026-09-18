@@ -24,11 +24,10 @@ import android.os.Build;
 import android.util.Size;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.core.Logger;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -76,8 +75,9 @@ class OutputConfigurationCompatBaseImpl implements
         ((OutputConfigurationParamsApi21) mObject).mPhysicalCameraId = physicalCameraId;
     }
 
+    @Nullable
     @Override
-    public @Nullable String getPhysicalCameraId() {
+    public String getPhysicalCameraId() {
         return ((OutputConfigurationParamsApi21) mObject).mPhysicalCameraId;
     }
 
@@ -168,7 +168,8 @@ class OutputConfigurationCompatBaseImpl implements
      * Get the {@link Surface} associated with this {@link OutputConfigurationCompat}.
      */
     @Override
-    public @Nullable Surface getSurface() {
+    @Nullable
+    public Surface getSurface() {
         List<Surface> surfaces = ((OutputConfigurationParamsApi21) mObject).mSurfaces;
         if (surfaces.size() == 0) {
             return null;
@@ -181,7 +182,8 @@ class OutputConfigurationCompatBaseImpl implements
      * Get the immutable list of surfaces associated with this {@link OutputConfigurationCompat}.
      */
     @Override
-    public @NonNull List<Surface> getSurfaces() {
+    @NonNull
+    public List<Surface> getSurfaces() {
         // mSurfaces is a singleton list, so return it directly.
         return ((OutputConfigurationParamsApi21) mObject).mSurfaces;
     }
@@ -192,8 +194,9 @@ class OutputConfigurationCompatBaseImpl implements
         return OutputConfigurationCompat.SURFACE_GROUP_ID_NONE;
     }
 
+    @Nullable
     @Override
-    public @Nullable Object getOutputConfiguration() {
+    public Object getOutputConfiguration() {
         return null;
     }
 
@@ -243,7 +246,8 @@ class OutputConfigurationCompatBaseImpl implements
         final int mConfiguredFormat;
         // Surface generation ID to distinguish changes to Surface native internals
         final int mConfiguredGenerationId;
-        @Nullable String mPhysicalCameraId;
+        @Nullable
+        String mPhysicalCameraId;
         boolean mIsShared = false;
         long mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
 

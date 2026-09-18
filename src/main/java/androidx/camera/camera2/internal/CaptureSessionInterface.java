@@ -20,14 +20,13 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.core.impl.DeferrableSurface;
 import androidx.camera.core.impl.SessionConfig;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -63,9 +62,10 @@ interface CaptureSessionInterface {
      * DeferrableSurface is closed that cannot be used to configure the
      * {@link CameraCaptureSession}.
      */
-    @NonNull ListenableFuture<Void> open(@NonNull SessionConfig sessionConfig,
+    @NonNull
+    ListenableFuture<Void> open(@NonNull SessionConfig sessionConfig,
             @NonNull CameraDevice cameraDevice,
-            SynchronizedCaptureSession.@NonNull Opener opener);
+            @NonNull SynchronizedCaptureSession.Opener opener);
 
 
     /**
@@ -84,10 +84,12 @@ interface CaptureSessionInterface {
      * Returns the configurations of the capture session, or null if it has not yet been set
      * or if the capture session has been closed.
      */
-    @Nullable SessionConfig getSessionConfig();
+    @Nullable
+    SessionConfig getSessionConfig();
 
     /** Returns the configurations of the capture requests. */
-    @NonNull List<CaptureConfig> getCaptureConfigs();
+    @NonNull
+    List<CaptureConfig> getCaptureConfigs();
 
     /**
      * Issues capture requests.
@@ -121,7 +123,8 @@ interface CaptureSessionInterface {
      * <p>Once a session is released it can no longer be opened again. After the session is released
      * all method calls on it do nothing.
      */
-    @NonNull ListenableFuture<Void> release(boolean abortInFlightCaptures);
+    @NonNull
+    ListenableFuture<Void> release(boolean abortInFlightCaptures);
 
     /**
      * Sets the mapping relations between surfaces and the streamUseCases of their associated

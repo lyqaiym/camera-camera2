@@ -18,6 +18,7 @@ package androidx.camera.camera2.internal;
 
 import android.util.Size;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.params.OutputConfigurationCompat;
@@ -29,8 +30,6 @@ import androidx.camera.core.impl.OptionsBundle;
 import androidx.camera.core.impl.PreviewConfig;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.UseCaseConfig;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * A {@link SessionConfig.OptionUnpacker} implementation for unpacking Camera2 options into a
@@ -45,7 +44,7 @@ final class Camera2SessionOptionUnpacker implements SessionConfig.OptionUnpacker
     public void unpack(
             @NonNull Size resolution,
             @NonNull UseCaseConfig<?> config,
-            final SessionConfig.@NonNull Builder builder) {
+            @NonNull final SessionConfig.Builder builder) {
         SessionConfig defaultSessionConfig =
                 config.getDefaultSessionConfig(/*valueIfMissing=*/ null);
 

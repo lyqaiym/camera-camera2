@@ -21,6 +21,7 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.util.Range;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraAccessExceptionCompat;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.camera2.internal.compat.CameraManagerCompat;
@@ -38,16 +39,14 @@ import androidx.camera.core.impl.utils.CameraOrientationUtil;
 import androidx.core.util.Preconditions;
 import androidx.lifecycle.LiveData;
 
-import org.jspecify.annotations.NonNull;
-
 import java.util.Set;
 
 @ExperimentalCamera2Interop
 public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
 
-    private final @NonNull String mCameraId;
-    private final @NonNull CameraCharacteristicsCompat mCameraCharacteristicsCompat;
-    private final @NonNull Camera2CameraInfo mCamera2CameraInfo;
+    @NonNull private final String mCameraId;
+    @NonNull private final CameraCharacteristicsCompat mCameraCharacteristicsCompat;
+    @NonNull private final Camera2CameraInfo mCamera2CameraInfo;
 
     public Camera2PhysicalCameraInfoImpl(@NonNull String cameraId,
             @NonNull CameraManagerCompat cameraManager) throws CameraAccessExceptionCompat {
@@ -59,15 +58,18 @@ public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
     /**
      * Gets the implementation of {@link Camera2CameraInfo}.
      */
-    public @NonNull Camera2CameraInfo getCamera2CameraInfo() {
+    @NonNull
+    public Camera2CameraInfo getCamera2CameraInfo() {
         return mCamera2CameraInfo;
     }
 
-    public @NonNull String getCameraId() {
+    @NonNull
+    public String getCameraId() {
         return mCameraId;
     }
 
-    public @NonNull CameraCharacteristicsCompat getCameraCharacteristicsCompat() {
+    @NonNull
+    public CameraCharacteristicsCompat getCameraCharacteristicsCompat() {
         return mCameraCharacteristicsCompat;
     }
 
@@ -97,33 +99,39 @@ public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull LiveData<Integer> getTorchState() {
+    public LiveData<Integer> getTorchState() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull LiveData<ZoomState> getZoomState() {
+    public LiveData<ZoomState> getZoomState() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull ExposureState getExposureState() {
+    public ExposureState getExposureState() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull LiveData<CameraState> getCameraState() {
+    public LiveData<CameraState> getCameraState() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull String getImplementationType() {
+    public String getImplementationType() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull CameraSelector getCameraSelector() {
+    public CameraSelector getCameraSelector() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
@@ -152,8 +160,9 @@ public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<Range<Integer>> getSupportedFrameRateRanges() {
+    public Set<Range<Integer>> getSupportedFrameRateRanges() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
@@ -167,14 +176,16 @@ public class Camera2PhysicalCameraInfoImpl implements CameraInfo {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<DynamicRange> querySupportedDynamicRanges(
+    public Set<DynamicRange> querySupportedDynamicRanges(
             @NonNull Set<DynamicRange> candidateDynamicRanges) {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 
+    @NonNull
     @Override
-    public @NonNull Set<CameraInfo> getPhysicalCameraInfos() {
+    public Set<CameraInfo> getPhysicalCameraInfos() {
         throw new UnsupportedOperationException("Physical camera doesn't support this function");
     }
 

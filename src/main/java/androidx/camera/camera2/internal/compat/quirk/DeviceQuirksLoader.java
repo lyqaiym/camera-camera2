@@ -16,10 +16,9 @@
 
 package androidx.camera.camera2.internal.compat.quirk;
 
+import androidx.annotation.NonNull;
 import androidx.camera.core.impl.Quirk;
 import androidx.camera.core.impl.QuirkSettings;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +35,8 @@ public class DeviceQuirksLoader {
      * Goes through all defined device-specific quirks, and returns those that should be loaded
      * on the current device.
      */
-    static @NonNull List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
+    @NonNull
+    static List<Quirk> loadQuirks(@NonNull QuirkSettings quirkSettings) {
         final List<Quirk> quirks = new ArrayList<>();
 
         // Load all device specific quirks
@@ -129,11 +129,6 @@ public class DeviceQuirksLoader {
                 SmallDisplaySizeQuirk.class,
                 SmallDisplaySizeQuirk.load())) {
             quirks.add(new SmallDisplaySizeQuirk());
-        }
-        if (quirkSettings.shouldEnableQuirk(
-                PreviewUnderExposureQuirk.class,
-                PreviewUnderExposureQuirk.load())) {
-            quirks.add(PreviewUnderExposureQuirk.INSTANCE);
         }
         if (quirkSettings.shouldEnableQuirk(
                 CaptureSessionShouldUseMrirQuirk.class,

@@ -25,6 +25,7 @@ import android.util.Range;
 
 import androidx.annotation.FloatRange;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
@@ -43,8 +44,6 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.Executor;
 
@@ -80,8 +79,9 @@ final class ZoomControl {
     private final ZoomStateImpl mCurrentZoomState;
     private final MutableLiveData<ZoomState> mZoomStateLiveData;
 
+    @NonNull
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
-    final @NonNull ZoomImpl mZoomImpl;
+    final ZoomImpl mZoomImpl;
 
     /**
      * true if it is ready to accept zoom operation. Any zoom operation during inactive state will
@@ -138,12 +138,13 @@ final class ZoomControl {
     }
 
     @ExecutedBy("mExecutor")
-    void addZoomOption(Camera2ImplConfig.@NonNull Builder builder) {
+    void addZoomOption(@NonNull Camera2ImplConfig.Builder builder) {
         mZoomImpl.addRequestOption(builder);
     }
 
     @ExecutedBy("mExecutor")
-    @NonNull Rect getCropSensorRegion() {
+    @NonNull
+    Rect getCropSensorRegion() {
         return mZoomImpl.getCropSensorRegion();
     }
 
@@ -201,7 +202,8 @@ final class ZoomControl {
      * {@link OperationCanceledException} if there is newer value being set or camera is closed. If
      * the ratio is out of range, it fails with {@link IllegalArgumentException}.
      */
-    @NonNull ListenableFuture<Void> setZoomRatio(float ratio) {
+    @NonNull
+    ListenableFuture<Void> setZoomRatio(float ratio) {
         // If the requested ratio is out of range, it will not modify zoom value but report
         // IllegalArgumentException in returned ListenableFuture.
         ZoomState zoomState;
@@ -229,7 +231,7 @@ final class ZoomControl {
      * updated or it will have failed, because some other action canceled the updating of the zoom.
      */
     @ExecutedBy("mExecutor")
-    private void submitCameraZoomRatio(CallbackToFutureAdapter.@NonNull Completer<Void> completer,
+    private void submitCameraZoomRatio(@NonNull CallbackToFutureAdapter.Completer<Void> completer,
             @NonNull ZoomState zoomState) {
         if (!mIsActive) {
             synchronized (mCurrentZoomState) {
@@ -263,8 +265,8 @@ final class ZoomControl {
      * {@link OperationCanceledException} if there is newer value being set or camera is closed.
      * If linearZoom is not in range [0..1], it fails with {@link IllegalArgumentException}.
      */
-    @NonNull ListenableFuture<Void> setLinearZoom(
-            @FloatRange(from = 0f, to = 1f) float linearZoom) {
+    @NonNull
+    ListenableFuture<Void> setLinearZoom(@FloatRange(from = 0f, to = 1f) float linearZoom) {
         // If the requested linearZoom is out of range, it will not modify zoom value but
         // report IllegalArgumentException in returned ListenableFuture.
         ZoomState zoomState;
@@ -319,7 +321,7 @@ final class ZoomControl {
          * Appends the required request options to the session config builder to activate
          * current zoom value.
          */
-        void addRequestOption(Camera2ImplConfig.@NonNull Builder builder);
+        void addRequestOption(@NonNull Camera2ImplConfig.Builder builder);
 
         /**
          * Resets current zoom to 1.0. Note that it won't trigger a update of current session.
@@ -333,7 +335,7 @@ final class ZoomControl {
          * update of current session.
          */
         void setZoomRatio(float zoomRatio,
-                CallbackToFutureAdapter.@NonNull Completer<Void> completer);
+                @NonNull CallbackToFutureAdapter.Completer<Void> completer);
 
         /**
          * Notifies the current capture result so that the zoomImpl can determine whether the
@@ -346,6 +348,7 @@ final class ZoomControl {
          * {@link androidx.camera.core.MeteringPoint} to sensor coordinates. Returns the sensor
          * rect if there is no crop region being set.
          */
-        @NonNull Rect getCropSensorRegion();
+        @NonNull
+        Rect getCropSensorRegion();
     }
 }

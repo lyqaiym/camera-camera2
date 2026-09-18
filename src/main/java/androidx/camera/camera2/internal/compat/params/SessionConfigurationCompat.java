@@ -25,13 +25,12 @@ import android.hardware.camera2.params.SessionConfiguration;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.camera2.internal.compat.CameraDeviceCompat;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -82,8 +81,8 @@ public final class SessionConfigurationCompat {
      */
     public SessionConfigurationCompat(@SessionMode int sessionType,
             @NonNull List<OutputConfigurationCompat> outputsCompat,
-            /* @CallbackExecutor */ @NonNull Executor executor,
-            CameraCaptureSession.@NonNull StateCallback cb) {
+            @NonNull /* @CallbackExecutor */ Executor executor,
+            @NonNull CameraCaptureSession.StateCallback cb) {
         if (Build.VERSION.SDK_INT < 28) {
             mImpl = new SessionConfigurationCompatBaseImpl(sessionType, outputsCompat, executor,
                     cb);
@@ -108,7 +107,8 @@ public final class SessionConfigurationCompat {
      * @return an equivalent {@link SessionConfigurationCompat} object, or {@code null} if not
      * supported.
      */
-    public static @Nullable SessionConfigurationCompat wrap(@Nullable Object sessionConfiguration) {
+    @Nullable
+    public static SessionConfigurationCompat wrap(@Nullable Object sessionConfiguration) {
         if (sessionConfiguration == null) {
             return null;
         }
@@ -131,9 +131,10 @@ public final class SessionConfigurationCompat {
         return outList;
     }
 
+    @NonNull
     @RequiresApi(24)
     @RestrictTo(Scope.LIBRARY)
-    public static @NonNull List<OutputConfiguration> transformFromCompat(
+    public static List<OutputConfiguration> transformFromCompat(
             @NonNull List<OutputConfigurationCompat> outputConfigurations) {
         ArrayList<OutputConfiguration> outList = new ArrayList<>(outputConfigurations.size());
         for (OutputConfigurationCompat outputConfiguration : outputConfigurations) {
@@ -158,7 +159,8 @@ public final class SessionConfigurationCompat {
      *
      * @return A list of output configurations for the capture session.
      */
-    public @NonNull List<OutputConfigurationCompat> getOutputConfigurations() {
+    @NonNull
+    public List<OutputConfigurationCompat> getOutputConfigurations() {
         return mImpl.getOutputConfigurations();
     }
 
@@ -168,7 +170,8 @@ public final class SessionConfigurationCompat {
      * @return A state callback interface implementation. May be {@code null} when created from
      * parcel.
      */
-    public CameraCaptureSession.@NonNull StateCallback getStateCallback() {
+    @NonNull
+    public CameraCaptureSession.StateCallback getStateCallback() {
         return mImpl.getStateCallback();
     }
 
@@ -177,7 +180,8 @@ public final class SessionConfigurationCompat {
      *
      * @return The Executor on which the callback will be invoked.
      */
-    public @NonNull Executor getExecutor() {
+    @NonNull
+    public Executor getExecutor() {
         return mImpl.getExecutor();
     }
 
@@ -186,7 +190,8 @@ public final class SessionConfigurationCompat {
      *
      * @return The capture session input configuration.
      */
-    public @Nullable InputConfigurationCompat getInputConfiguration() {
+    @Nullable
+    public InputConfigurationCompat getInputConfiguration() {
         return mImpl.getInputConfiguration();
     }
 
@@ -208,7 +213,8 @@ public final class SessionConfigurationCompat {
      * @return A capture request that includes the initial values for any available
      * session wide capture keys.
      */
-    public @Nullable CaptureRequest getSessionParameters() {
+    @Nullable
+    public CaptureRequest getSessionParameters() {
         return mImpl.getSessionParameters();
     }
 
@@ -242,7 +248,8 @@ public final class SessionConfigurationCompat {
      * @return an equivalent android.hardware.camera2.params.SessionConfiguration object, or
      * {@code null} if not supported.
      */
-    public @Nullable Object unwrap() {
+    @Nullable
+    public Object unwrap() {
         return mImpl.getSessionConfiguration();
     }
 
@@ -271,21 +278,27 @@ public final class SessionConfigurationCompat {
         @SessionMode
         int getSessionType();
 
-        @NonNull List<OutputConfigurationCompat> getOutputConfigurations();
+        @NonNull
+        List<OutputConfigurationCompat> getOutputConfigurations();
 
-        CameraCaptureSession.@NonNull StateCallback getStateCallback();
+        @NonNull
+        CameraCaptureSession.StateCallback getStateCallback();
 
-        @NonNull Executor getExecutor();
+        @NonNull
+        Executor getExecutor();
 
-        @Nullable InputConfigurationCompat getInputConfiguration();
+        @Nullable
+        InputConfigurationCompat getInputConfiguration();
 
         void setInputConfiguration(@NonNull InputConfigurationCompat input);
 
-        @Nullable CaptureRequest getSessionParameters();
+        @Nullable
+        CaptureRequest getSessionParameters();
 
         void setSessionParameters(@NonNull CaptureRequest params);
 
-        @Nullable Object getSessionConfiguration();
+        @Nullable
+        Object getSessionConfiguration();
     }
 
     private static final class SessionConfigurationCompatBaseImpl implements
@@ -300,8 +313,8 @@ public final class SessionConfigurationCompat {
 
         SessionConfigurationCompatBaseImpl(@SessionMode int sessionType,
                 @NonNull List<OutputConfigurationCompat> outputs,
-                /* @CallbackExecutor */ @NonNull Executor executor,
-                CameraCaptureSession.@NonNull StateCallback cb) {
+                @NonNull /* @CallbackExecutor */ Executor executor,
+                @NonNull CameraCaptureSession.StateCallback cb) {
             mSessionType = sessionType;
             mOutputConfigurations = Collections.unmodifiableList(new ArrayList<>(outputs));
             mStateCallback = cb;
@@ -313,23 +326,27 @@ public final class SessionConfigurationCompat {
             return mSessionType;
         }
 
+        @NonNull
         @Override
-        public @NonNull List<OutputConfigurationCompat> getOutputConfigurations() {
+        public List<OutputConfigurationCompat> getOutputConfigurations() {
             return mOutputConfigurations;
         }
 
+        @NonNull
         @Override
-        public CameraCaptureSession.@NonNull StateCallback getStateCallback() {
+        public CameraCaptureSession.StateCallback getStateCallback() {
             return mStateCallback;
         }
 
+        @NonNull
         @Override
-        public @NonNull Executor getExecutor() {
+        public Executor getExecutor() {
             return mExecutor;
         }
 
+        @Nullable
         @Override
-        public @Nullable InputConfigurationCompat getInputConfiguration() {
+        public InputConfigurationCompat getInputConfiguration() {
             return mInputConfig;
         }
 
@@ -353,8 +370,9 @@ public final class SessionConfigurationCompat {
             mSessionParameters = params;
         }
 
+        @Nullable
         @Override
-        public @Nullable Object getSessionConfiguration() {
+        public Object getSessionConfiguration() {
             return null;
         }
 
@@ -412,8 +430,8 @@ public final class SessionConfigurationCompat {
 
         SessionConfigurationCompatApi28Impl(@SessionMode int sessionType,
                 @NonNull List<OutputConfigurationCompat> outputs,
-                /* @CallbackExecutor */ @NonNull Executor executor,
-                CameraCaptureSession.@NonNull StateCallback cb) {
+                @NonNull /* @CallbackExecutor */ Executor executor,
+                @NonNull CameraCaptureSession.StateCallback cb) {
             this(new SessionConfiguration(sessionType, transformFromCompat(outputs), executor, cb));
         }
 
@@ -422,19 +440,22 @@ public final class SessionConfigurationCompat {
             return mObject.getSessionType();
         }
 
+        @NonNull
         @Override
-        public @NonNull List<OutputConfigurationCompat> getOutputConfigurations() {
+        public List<OutputConfigurationCompat> getOutputConfigurations() {
             // Return cached compat version of list
             return mOutputConfigurations;
         }
 
+        @NonNull
         @Override
-        public CameraCaptureSession.@NonNull StateCallback getStateCallback() {
+        public CameraCaptureSession.StateCallback getStateCallback() {
             return mObject.getStateCallback();
         }
 
+        @NonNull
         @Override
-        public @NonNull Executor getExecutor() {
+        public Executor getExecutor() {
             return mObject.getExecutor();
         }
 
@@ -458,8 +479,9 @@ public final class SessionConfigurationCompat {
             mObject.setSessionParameters(params);
         }
 
+        @Nullable
         @Override
-        public @Nullable Object getSessionConfiguration() {
+        public Object getSessionConfiguration() {
             return mObject;
         }
 

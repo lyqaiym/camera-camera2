@@ -35,6 +35,7 @@ import android.hardware.camera2.CaptureRequest;
 import android.os.Handler;
 import android.os.HandlerThread;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.Camera2Config;
 import androidx.camera.camera2.impl.Camera2ImplConfig;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
@@ -58,7 +59,6 @@ import androidx.test.filters.SmallTest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -245,7 +245,8 @@ public final class ZoomControlDeviceTest {
         assertThat(zoomRatio).isEqualTo(2.0f);
     }
 
-    private @NonNull Rect getSessionCropRegion(ControlUpdateCallback controlUpdateCallback) {
+    @NonNull
+    private Rect getSessionCropRegion(ControlUpdateCallback controlUpdateCallback) {
         verify(controlUpdateCallback, times(1)).onCameraControlUpdateSessionConfig();
         SessionConfig sessionConfig = mCamera2CameraControlImpl.getSessionConfig();
         Camera2ImplConfig camera2Config = new Camera2ImplConfig(
@@ -256,8 +257,9 @@ public final class ZoomControlDeviceTest {
                 CaptureRequest.SCALER_CROP_REGION, null));
     }
 
+    @NonNull
     @SdkSuppress(minSdkVersion = 30)
-    private @NonNull Float getAndroidRZoomRatio(ControlUpdateCallback controlUpdateCallback) {
+    private Float getAndroidRZoomRatio(ControlUpdateCallback controlUpdateCallback) {
         verify(controlUpdateCallback, times(1)).onCameraControlUpdateSessionConfig();
         SessionConfig sessionConfig = mCamera2CameraControlImpl.getSessionConfig();
         Camera2ImplConfig camera2Config = new Camera2ImplConfig(

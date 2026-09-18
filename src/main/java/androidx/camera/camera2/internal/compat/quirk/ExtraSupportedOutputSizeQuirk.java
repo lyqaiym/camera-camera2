@@ -20,10 +20,9 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 import android.util.Size;
 
+import androidx.annotation.NonNull;
 import androidx.camera.core.impl.ImageFormatConstants;
 import androidx.camera.core.impl.Quirk;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * <p>QuirkSummary
@@ -48,7 +47,8 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
     /**
      * Returns the extra supported resolutions on the device.
      */
-    public Size @NonNull [] getExtraSupportedResolutions(int format) {
+    @NonNull
+    public Size[] getExtraSupportedResolutions(int format) {
         if (format == ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
                 && isMotoE5Play()) {
             return getMotoE5PlayExtraSupportedResolutions();
@@ -60,7 +60,8 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
     /**
      * Returns the extra supported resolutions on the device.
      */
-    public <T> Size @NonNull [] getExtraSupportedResolutions(@NonNull Class<T> klass) {
+    @NonNull
+    public <T> Size[] getExtraSupportedResolutions(@NonNull Class<T> klass) {
         if (StreamConfigurationMap.isOutputSupportedFor(klass) && isMotoE5Play()) {
             return getMotoE5PlayExtraSupportedResolutions();
         } else {
@@ -68,7 +69,8 @@ public class ExtraSupportedOutputSizeQuirk implements Quirk {
         }
     }
 
-    private Size @NonNull [] getMotoE5PlayExtraSupportedResolutions() {
+    @NonNull
+    private Size[] getMotoE5PlayExtraSupportedResolutions() {
         // Both the front and the main cameras support the following resolutions.
         return new Size[]{
                 // FHD

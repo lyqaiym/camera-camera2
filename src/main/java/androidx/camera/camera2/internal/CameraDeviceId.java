@@ -16,9 +16,9 @@
 
 package androidx.camera.camera2.internal;
 
-import com.google.auto.value.AutoValue;
+import androidx.annotation.NonNull;
 
-import org.jspecify.annotations.NonNull;
+import com.google.auto.value.AutoValue;
 
 /**
  * Camera device id that is composed by Brand, Device, Model and CameraId.
@@ -33,21 +33,26 @@ abstract class CameraDeviceId {
      *
      * <p>Be noticed that all CameraDeviceId related info will be stored in lower case.
      */
-    public static @NonNull CameraDeviceId create(@NonNull String brand, @NonNull String device,
+    @NonNull
+    public static CameraDeviceId create(@NonNull String brand, @NonNull String device,
             @NonNull String model, @NonNull String cameraId) {
         return new AutoValue_CameraDeviceId(brand.toLowerCase(), device.toLowerCase(),
                 model.toLowerCase(), cameraId.toLowerCase());
     }
 
     /** Returns the brand. */
-    public abstract @NonNull String getBrand();
+    @NonNull
+    public abstract String getBrand();
 
     /** Returns the device. */
-    public abstract @NonNull String getDevice();
+    @NonNull
+    public abstract String getDevice();
 
     /** Returns the model. */
-    public abstract @NonNull String getModel();
+    @NonNull
+    public abstract String getModel();
 
     /** Returns the camera id. */
-    public abstract @NonNull String getCameraId();
+    @NonNull
+    public abstract String getCameraId();
 }

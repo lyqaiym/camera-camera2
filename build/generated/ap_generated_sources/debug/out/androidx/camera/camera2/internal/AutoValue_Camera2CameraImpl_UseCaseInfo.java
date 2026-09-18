@@ -1,37 +1,40 @@
 package androidx.camera.camera2.internal;
 
 import android.util.Size;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.core.impl.SessionConfig;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import java.util.List;
 import javax.annotation.processing.Generated;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 @Generated("com.google.auto.value.processor.AutoValueProcessor")
 final class AutoValue_Camera2CameraImpl_UseCaseInfo extends Camera2CameraImpl.UseCaseInfo {
 
-  private final @NonNull String useCaseId;
+  private final String useCaseId;
 
-  private final @NonNull Class<?> useCaseType;
+  private final Class<?> useCaseType;
 
-  private final @NonNull SessionConfig sessionConfig;
+  private final SessionConfig sessionConfig;
 
-  private final @NonNull UseCaseConfig<?> useCaseConfig;
+  private final UseCaseConfig<?> useCaseConfig;
 
-  private final @Nullable Size surfaceResolution;
+  @Nullable
+  private final Size surfaceResolution;
 
-  private final @Nullable StreamSpec streamSpec;
+  @Nullable
+  private final StreamSpec streamSpec;
 
-  private final @Nullable List<UseCaseConfigFactory.CaptureType> captureTypes;
+  @Nullable
+  private final List<UseCaseConfigFactory.CaptureType> captureTypes;
 
   AutoValue_Camera2CameraImpl_UseCaseInfo(
-      @NonNull String useCaseId,
-      @NonNull Class<?> useCaseType,
-      @NonNull SessionConfig sessionConfig,
-      @NonNull UseCaseConfig<?> useCaseConfig,
+      String useCaseId,
+      Class<?> useCaseType,
+      SessionConfig sessionConfig,
+      UseCaseConfig<?> useCaseConfig,
       @Nullable Size surfaceResolution,
       @Nullable StreamSpec streamSpec,
       @Nullable List<UseCaseConfigFactory.CaptureType> captureTypes) {
@@ -56,38 +59,45 @@ final class AutoValue_Camera2CameraImpl_UseCaseInfo extends Camera2CameraImpl.Us
     this.captureTypes = captureTypes;
   }
 
+  @NonNull
   @Override
-  @NonNull String getUseCaseId() {
+  String getUseCaseId() {
     return useCaseId;
   }
 
+  @NonNull
   @Override
-  @NonNull Class<?> getUseCaseType() {
+  Class<?> getUseCaseType() {
     return useCaseType;
   }
 
+  @NonNull
   @Override
-  @NonNull SessionConfig getSessionConfig() {
+  SessionConfig getSessionConfig() {
     return sessionConfig;
   }
 
+  @NonNull
   @Override
-  @NonNull UseCaseConfig<?> getUseCaseConfig() {
+  UseCaseConfig<?> getUseCaseConfig() {
     return useCaseConfig;
   }
 
+  @Nullable
   @Override
-  @Nullable Size getSurfaceResolution() {
+  Size getSurfaceResolution() {
     return surfaceResolution;
   }
 
+  @Nullable
   @Override
-  @Nullable StreamSpec getStreamSpec() {
+  StreamSpec getStreamSpec() {
     return streamSpec;
   }
 
+  @Nullable
   @Override
-  @Nullable List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
+  List<UseCaseConfigFactory.CaptureType> getCaptureTypes() {
     return captureTypes;
   }
 
@@ -105,7 +115,7 @@ final class AutoValue_Camera2CameraImpl_UseCaseInfo extends Camera2CameraImpl.Us
   }
 
   @Override
-  public boolean equals(@Nullable Object o) {
+  public boolean equals(Object o) {
     if (o == this) {
       return true;
     }

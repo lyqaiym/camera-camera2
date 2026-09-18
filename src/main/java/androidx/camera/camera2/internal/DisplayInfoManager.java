@@ -22,13 +22,12 @@ import android.hardware.display.DisplayManager;
 import android.util.Size;
 import android.view.Display;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.workaround.DisplaySizeCorrector;
 import androidx.camera.camera2.internal.compat.workaround.MaxPreviewSize;
 import androidx.camera.core.internal.utils.SizeUtil;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A singleton class to retrieve display related information.
@@ -46,7 +45,8 @@ public class DisplayInfoManager {
     private static final Size FALLBACK_DISPLAY_SIZE = new Size(640, 480);
     private static final Object INSTANCE_LOCK = new Object();
     private static volatile DisplayInfoManager sInstance;
-    private final @NonNull DisplayManager mDisplayManager;
+    @NonNull
+    private final DisplayManager mDisplayManager;
     private volatile Size mPreviewSize = null;
     private final MaxPreviewSize mMaxPreviewSize = new MaxPreviewSize();
     private final DisplaySizeCorrector mDisplaySizeCorrector = new DisplaySizeCorrector();
@@ -58,7 +58,8 @@ public class DisplayInfoManager {
     /**
      * Gets the singleton instance of DisplayInfoManager.
      */
-    public static @NonNull DisplayInfoManager getInstance(@NonNull Context context) {
+    @NonNull
+    public static DisplayInfoManager getInstance(@NonNull Context context) {
         if (sInstance == null) {
             synchronized (INSTANCE_LOCK) {
                 if (sInstance == null) {
@@ -89,7 +90,8 @@ public class DisplayInfoManager {
      *
      * @param skipStateOffDisplay true to skip the displays with off state
      */
-    public @NonNull Display getMaxSizeDisplay(boolean skipStateOffDisplay) {
+    @NonNull
+    public Display getMaxSizeDisplay(boolean skipStateOffDisplay) {
         Display[] displays = mDisplayManager.getDisplays();
         if (displays.length == 1) {
             return displays[0];
@@ -113,8 +115,9 @@ public class DisplayInfoManager {
         return maxDisplay;
     }
 
+    @Nullable
     @SuppressWarnings("deprecation") /* getRealSize */
-    private @Nullable Display getMaxSizeDisplayInternal(Display @NonNull [] displays,
+    private Display getMaxSizeDisplayInternal(@NonNull Display[] displays,
             boolean skipStateOffDisplay) {
         Display maxDisplay = null;
         int maxDisplaySize = -1;
@@ -140,7 +143,8 @@ public class DisplayInfoManager {
      * PREVIEW refers to the best size match to the device's screen resolution, or to 1080p
      * (1920x1080), whichever is smaller.
      */
-    @NonNull Size getPreviewSize() {
+    @NonNull
+    Size getPreviewSize() {
         // Use cached value to speed up since this would be called multiple times.
         if (mPreviewSize != null) {
             return mPreviewSize;
@@ -159,8 +163,9 @@ public class DisplayInfoManager {
         return mMaxPreviewSize.getMaxPreviewResolution(displayViewSize);
     }
 
+    @NonNull
     @SuppressWarnings("deprecation") /* getRealSize */
-    private @NonNull Size getCorrectedDisplaySize() {
+    private Size getCorrectedDisplaySize() {
         Point displaySize = new Point();
         // The PREVIEW size should be determined by the max display size among all displays on
         // the device no matter its state is on or off. The PREVIEW size is used for the

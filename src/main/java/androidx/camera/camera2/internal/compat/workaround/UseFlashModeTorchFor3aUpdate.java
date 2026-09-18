@@ -16,12 +16,11 @@
 
 package androidx.camera.camera2.internal.compat.workaround;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.quirk.TorchFlashRequiredFor3aUpdateQuirk;
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Quirks;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Workaround to use torch as flash.
@@ -31,7 +30,8 @@ import org.jspecify.annotations.Nullable;
 public class UseFlashModeTorchFor3aUpdate {
     private static final String TAG = "UseFlashModeTorchFor3aUpdate";
 
-    private final @Nullable TorchFlashRequiredFor3aUpdateQuirk mTorchFlashRequiredFor3AUpdateQuirk;
+    @Nullable
+    private final TorchFlashRequiredFor3aUpdateQuirk mTorchFlashRequiredFor3AUpdateQuirk;
 
     public UseFlashModeTorchFor3aUpdate(@NonNull Quirks quirks) {
         mTorchFlashRequiredFor3AUpdateQuirk = quirks.get(TorchFlashRequiredFor3aUpdateQuirk.class);

@@ -24,6 +24,8 @@ import android.os.Handler;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.annotation.CameraExecutor;
 import androidx.camera.camera2.internal.compat.params.SessionConfigurationCompat;
 import androidx.camera.camera2.internal.compat.quirk.CaptureSessionStuckQuirk;
@@ -41,9 +43,6 @@ import androidx.camera.core.impl.utils.futures.Futures;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -57,15 +56,18 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
 
     private static final String TAG = "SyncCaptureSessionImpl";
 
-    private final @NonNull ScheduledExecutorService mScheduledExecutorService;
+    @NonNull
+    private final ScheduledExecutorService mScheduledExecutorService;
 
     @SuppressWarnings("WeakerAccess") /* synthetic accessor */
     private final Object mObjectLock = new Object();
 
+    @Nullable
     @GuardedBy("mObjectLock")
-    private @Nullable List<DeferrableSurface> mDeferrableSurfaces;
+    private List<DeferrableSurface> mDeferrableSurfaces;
+    @Nullable
     @GuardedBy("mObjectLock")
-    @Nullable ListenableFuture<List<Void>> mOpenSessionBlockerFuture;
+    ListenableFuture<List<Void>> mOpenSessionBlockerFuture;
 
     private final ForceCloseDeferrableSurface mCloseSurfaceQuirk;
     private final ForceCloseCaptureSession mForceCloseSessionQuirk;
@@ -77,7 +79,7 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
             @NonNull Quirks cameraQuirks,
             @NonNull Quirks deviceQuirks,
             @NonNull CaptureSessionRepository repository,
-            @CameraExecutor @NonNull Executor executor,
+            @NonNull @CameraExecutor Executor executor,
             @NonNull ScheduledExecutorService scheduledExecutorService,
             @NonNull Handler compatHandler) {
         super(repository, executor, scheduledExecutorService, compatHandler);
@@ -90,8 +92,9 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
     }
 
     @ExecutedBy("mExecutor")
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Void> openCaptureSession(@NonNull CameraDevice cameraDevice,
+    public ListenableFuture<Void> openCaptureSession(@NonNull CameraDevice cameraDevice,
             @NonNull SessionConfigurationCompat sessionConfigurationCompat,
             @NonNull List<DeferrableSurface> deferrableSurfaces) {
         synchronized (mObjectLock) {
@@ -126,15 +129,17 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
     }
 
     @ExecutedBy("mExecutor")
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<Void> getOpeningBlocker() {
+    public ListenableFuture<Void> getOpeningBlocker() {
         return Futures.makeTimeoutFuture(1500, mScheduledExecutorService,
                 mRequestMonitor.getRequestsProcessedFuture());
     }
 
     @ExecutedBy("mExecutor")
+    @NonNull
     @Override
-    public @NonNull ListenableFuture<List<Surface>> startWithDeferrableSurface(
+    public ListenableFuture<List<Surface>> startWithDeferrableSurface(
             @NonNull List<DeferrableSurface> deferrableSurfaces, long timeout) {
         synchronized (mObjectLock) {
             mDeferrableSurfaces = deferrableSurfaces;
@@ -160,7 +165,7 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
     @ExecutedBy("mExecutor")
     @Override
     public int setSingleRepeatingRequest(@NonNull CaptureRequest request,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         return super.setSingleRepeatingRequest(
                 request, mRequestMonitor.createMonitorListener(listener));
     }
@@ -168,7 +173,7 @@ class SynchronizedCaptureSessionImpl extends SynchronizedCaptureSessionBaseImpl 
     @ExecutedBy("mExecutor")
     @Override
     public int captureBurstRequests(@NonNull List<CaptureRequest> requests,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         return super.captureBurstRequests(
                 requests, mRequestMonitor.createMonitorListener(listener));
     }

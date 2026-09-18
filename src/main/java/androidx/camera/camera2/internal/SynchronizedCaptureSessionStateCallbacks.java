@@ -20,10 +20,9 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.os.Build;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,8 +36,9 @@ final class SynchronizedCaptureSessionStateCallbacks extends
     /**
      * Returns a session state callback which calls a list of other callbacks.
      */
-    static SynchronizedCaptureSession.@NonNull StateCallback createComboCallback(
-            SynchronizedCaptureSession.StateCallback @NonNull ... callbacks) {
+    @NonNull
+    static SynchronizedCaptureSession.StateCallback createComboCallback(
+            @NonNull SynchronizedCaptureSession.StateCallback... callbacks) {
         return new SynchronizedCaptureSessionStateCallbacks(Arrays.asList(callbacks));
     }
 
@@ -107,10 +107,10 @@ final class SynchronizedCaptureSessionStateCallbacks extends
     }
 
     static class Adapter extends SynchronizedCaptureSession.StateCallback {
-        private final CameraCaptureSession.@NonNull StateCallback
-                mCameraCaptureSessionStateCallback;
+        @NonNull
+        private final CameraCaptureSession.StateCallback mCameraCaptureSessionStateCallback;
 
-        Adapter(CameraCaptureSession.@NonNull StateCallback cameraCaptureSessionStateCallback) {
+        Adapter(@NonNull CameraCaptureSession.StateCallback cameraCaptureSessionStateCallback) {
             mCameraCaptureSessionStateCallback = cameraCaptureSessionStateCallback;
         }
 

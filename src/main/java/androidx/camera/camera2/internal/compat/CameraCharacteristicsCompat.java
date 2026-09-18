@@ -22,12 +22,10 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Build;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.IntRange;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.camera2.internal.compat.workaround.OutputSizesCorrector;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -38,12 +36,16 @@ import java.util.Set;
  * the latency and might contain backward compatible fixes for certain parameters.
  */
 public class CameraCharacteristicsCompat {
+    @NonNull
     @GuardedBy("this")
-    private final @NonNull Map<CameraCharacteristics.Key<?>, Object> mValuesCache = new HashMap<>();
-    private final @NonNull CameraCharacteristicsCompatImpl mCameraCharacteristicsImpl;
-    private final @NonNull String mCameraId;
+    private final Map<CameraCharacteristics.Key<?>, Object> mValuesCache = new HashMap<>();
+    @NonNull
+    private final CameraCharacteristicsCompatImpl mCameraCharacteristicsImpl;
+    @NonNull
+    private final String mCameraId;
 
-    private @Nullable StreamConfigurationMapCompat mStreamConfigurationMapCompat = null;
+    @Nullable
+    private StreamConfigurationMapCompat mStreamConfigurationMapCompat = null;
 
     private CameraCharacteristicsCompat(@NonNull CameraCharacteristics cameraCharacteristics,
             @NonNull String cameraId) {
@@ -60,7 +62,8 @@ public class CameraCharacteristicsCompat {
      * we should get the CameraCharacteristicsCompat instance from {@link CameraManagerCompat}.
      */
     @VisibleForTesting
-    public static @NonNull CameraCharacteristicsCompat toCameraCharacteristicsCompat(
+    @NonNull
+    public static CameraCharacteristicsCompat toCameraCharacteristicsCompat(
             @NonNull CameraCharacteristics characteristics, @NonNull String cameraId) {
         return new CameraCharacteristicsCompat(characteristics, cameraId);
     }
@@ -69,7 +72,7 @@ public class CameraCharacteristicsCompat {
      * Return true if the key should be retrieved from {@link CameraCharacteristics} without
      * caching it.
      */
-    private boolean isKeyNonCacheable(CameraCharacteristics.@NonNull Key<?> key) {
+    private boolean isKeyNonCacheable(@NonNull CameraCharacteristics.Key<?> key) {
         // SENSOR_ORIENTATION value should change in some circumstances.
         return key.equals(CameraCharacteristics.SENSOR_ORIENTATION);
     }
@@ -83,7 +86,8 @@ public class CameraCharacteristicsCompat {
      * @param key The characteristics field to read.
      * @return The value of that key, or null if the field is not set.
      */
-    public <T> @Nullable T get(CameraCharacteristics.@NonNull Key<T> key) {
+    @Nullable
+    public <T> T get(@NonNull CameraCharacteristics.Key<T> key) {
         // For some keys that will have varying value and cannot be cached, we need to always
         // retrieve the key from the CameraCharacteristics.
         if (isKeyNonCacheable(key)) {
@@ -109,7 +113,8 @@ public class CameraCharacteristicsCompat {
      * Returns the physical camera Ids if it is a logical camera. Otherwise it would
      * return an empty set.
      */
-    public @NonNull Set<String> getPhysicalCameraIds() {
+    @NonNull
+    public Set<String> getPhysicalCameraIds() {
         return mCameraCharacteristicsImpl.getPhysicalCameraIds();
     }
 
@@ -132,49 +137,11 @@ public class CameraCharacteristicsCompat {
     }
 
     /**
-     * Returns the default torch strength level.
-     */
-    public int getDefaultTorchStrengthLevel() {
-        Integer defaultLevel = null;
-        if (hasFlashUnit() && Build.VERSION.SDK_INT >= 35) {
-            defaultLevel = get(CameraCharacteristics.FLASH_TORCH_STRENGTH_DEFAULT_LEVEL);
-        }
-        // The framework returns 1 when the device doesn't support configuring torch strength. So
-        // also return 1 if the device doesn't have flash unit or is unable to provide the
-        // information.
-        return defaultLevel == null ? 1 : defaultLevel;
-    }
-
-    /**
-     * Returns the maximum torch strength level.
-     */
-    @IntRange(from = 1)
-    public int getMaxTorchStrengthLevel() {
-        Integer maxLevel = null;
-        if (hasFlashUnit() && Build.VERSION.SDK_INT >= 35) {
-            maxLevel = get(CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL);
-        }
-        // The framework returns 1 when the device doesn't support configuring torch strength. So
-        // also return 1 if the device doesn't have flash unit or is unable to provide the
-        // information.
-        return maxLevel == null ? 1 : maxLevel;
-    }
-
-    public boolean isTorchStrengthLevelSupported() {
-        return hasFlashUnit() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
-                && getMaxTorchStrengthLevel() > 1;
-    }
-
-    private boolean hasFlashUnit() {
-        Boolean flashInfoAvailable = get(CameraCharacteristics.FLASH_INFO_AVAILABLE);
-        return flashInfoAvailable != null && flashInfoAvailable;
-    }
-
-    /**
      * Obtains the {@link StreamConfigurationMapCompat} which contains the output sizes related
      * workarounds in it.
      */
-    public @NonNull StreamConfigurationMapCompat getStreamConfigurationMapCompat() {
+    @NonNull
+    public StreamConfigurationMapCompat getStreamConfigurationMapCompat() {
         if (mStreamConfigurationMapCompat == null) {
             StreamConfigurationMap map;
             try {
@@ -201,15 +168,9 @@ public class CameraCharacteristicsCompat {
     /**
      * Returns the {@link CameraCharacteristics} represented by this object.
      */
-    public @NonNull CameraCharacteristics toCameraCharacteristics() {
+    @NonNull
+    public CameraCharacteristics toCameraCharacteristics() {
         return mCameraCharacteristicsImpl.unwrap();
-    }
-
-    /**
-     * Returns the camera id associated with the camera characteristics.
-     */
-    public @NonNull String getCameraId() {
-        return mCameraId;
     }
 
     /**
@@ -219,16 +180,19 @@ public class CameraCharacteristicsCompat {
         /**
          * Gets the key/values from the CameraCharacteristics.
          */
-        <T> @Nullable T get(CameraCharacteristics.@NonNull Key<T> key);
+        @Nullable
+        <T> T get(@NonNull CameraCharacteristics.Key<T> key);
 
         /**
          * Gets physical camera ids.
          */
-        @NonNull Set<String> getPhysicalCameraIds();
+        @NonNull
+        Set<String> getPhysicalCameraIds();
 
         /**
          * Returns the underlying {@link CameraCharacteristics} instance.
          */
-        @NonNull CameraCharacteristics unwrap();
+        @NonNull
+        CameraCharacteristics unwrap();
     }
 }

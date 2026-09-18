@@ -18,11 +18,10 @@ package androidx.camera.camera2.internal;
 
 import android.media.ImageWriter;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.core.ImageProxy;
 import androidx.camera.core.impl.SessionConfig;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Interface for Zero-Shutter Lag image capture control.
@@ -34,12 +33,7 @@ interface ZslControl {
      *
      * @param sessionConfigBuilder session config builder.
      */
-    void addZslConfig(SessionConfig.@NonNull Builder sessionConfigBuilder);
-
-    /**
-     *  This method cleans up all resources used for ZSL capture.
-     */
-    void clearZslConfig();
+    void addZslConfig(@NonNull SessionConfig.Builder sessionConfigBuilder);
 
     /**
      * Sets the flag if zero-shutter lag needs to be disabled by user case config.
@@ -88,7 +82,8 @@ interface ZslControl {
      *
      * @return {@link ImageProxy}.
      */
-    @Nullable ImageProxy dequeueImageFromBuffer();
+    @Nullable
+    ImageProxy dequeueImageFromBuffer();
 
     /**
      * Enqueues image to {@link ImageWriter} for reprocessing capture request.

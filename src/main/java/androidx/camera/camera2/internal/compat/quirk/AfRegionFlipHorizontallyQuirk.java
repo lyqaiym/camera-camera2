@@ -20,10 +20,9 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CaptureRequest;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
 import androidx.camera.core.impl.Quirk;
-
-import org.jspecify.annotations.NonNull;
 
 /**
  * Quirk denoting Af Region is incorrectly flipped horizontally.
@@ -35,7 +34,7 @@ import org.jspecify.annotations.NonNull;
  *     Device(s): All Samsung devices.
  */
 public class AfRegionFlipHorizontallyQuirk implements Quirk {
-    static boolean load(final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+    static boolean load(@NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         return (Build.BRAND.equalsIgnoreCase("SAMSUNG")
                 && Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU // Samsung fixed it in T.
                 && cameraCharacteristicsCompat.get(CameraCharacteristics.LENS_FACING)

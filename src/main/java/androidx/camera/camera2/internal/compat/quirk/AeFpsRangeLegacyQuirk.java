@@ -19,12 +19,10 @@ package androidx.camera.camera2.internal.compat.quirk;
 import android.hardware.camera2.CameraCharacteristics;
 import android.util.Range;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.camera.camera2.internal.compat.CameraCharacteristicsCompat;
-import androidx.camera.core.impl.StreamSpec;
-import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import androidx.camera.core.impl.Quirk;
 
 /**
  * <p>QuirkSummary
@@ -32,33 +30,50 @@ import org.jspecify.annotations.Nullable;
  *     Description: Quirk required to maintain good exposure on legacy devices by specifying a
  *                  proper
  *                  {@link android.hardware.camera2.CaptureRequest#CONTROL_AE_TARGET_FPS_RANGE}.
- *                  Legacy devices set the AE target FPS range to [30, 30] by default. This can
- *                  potentially cause underexposure issues.
- *                  On legacy devices, to set a AE FPS range whose upper bound is 30, which
- *                  guarantees a smooth frame rate, and whose lower bound is as small as possible
- *                  to properly expose frames in low light conditions. The default behavior on non
- *                  legacy devices does not add the AE FPS range option.
+ *                  Legacy devices set the AE target FPS range to [30, 30]. This can potentially
+ *                  cause underexposure issues.
+ *                  {@link androidx.camera.camera2.internal.compat.workaround.AeFpsRange}
+ *                  contains a workaround that is used on legacy devices to set a AE FPS range
+ *                  whose upper bound is 30, which guarantees a smooth frame rate, and whose lower
+ *                  bound is as small as possible to properly expose frames in low light
+ *                  conditions. The default behavior on non legacy devices does not add the AE
+ *                  FPS range option.
  *     Device(s): All legacy devices
+ *     @see androidx.camera.camera2.internal.compat.workaround.AeFpsRange
  */
-public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
+public class AeFpsRangeLegacyQuirk implements Quirk {
 
-    private final @Nullable Range<Integer> mAeFpsRange;
+    @Nullable
+    private final Range<Integer> mAeFpsRange;
 
     public AeFpsRangeLegacyQuirk(
-            final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+            @NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         final Range<Integer>[] availableFpsRanges = cameraCharacteristicsCompat.get(
                 CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES);
         mAeFpsRange = pickSuitableFpsRange(availableFpsRanges);
     }
 
-    static boolean load(final @NonNull CameraCharacteristicsCompat cameraCharacteristicsCompat) {
+    static boolean load(@NonNull final CameraCharacteristicsCompat cameraCharacteristicsCompat) {
         final Integer level = cameraCharacteristicsCompat.get(
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
         return level != null && level == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    private @Nullable Range<Integer> pickSuitableFpsRange(
-            final Range<Integer> @Nullable [] availableFpsRanges) {
+    /**
+     * Returns the fps range whose upper is 30 and whose lower is the smallest, or null if no
+     * range has an upper equal to 30.  The rational is:
+     * 1. Range upper is always 30 so that a smooth frame rate is guaranteed.
+     * 2. Range lower contains the smallest supported value so that it can adapt as much as
+     * possible to low light conditions.
+     */
+    @Nullable
+    public Range<Integer> getRange() {
+        return mAeFpsRange;
+    }
+
+    @Nullable
+    private Range<Integer> pickSuitableFpsRange(
+            @Nullable final Range<Integer>[] availableFpsRanges) {
         if (availableFpsRanges == null || availableFpsRanges.length == 0) {
             return null;
         }
@@ -87,7 +102,8 @@ public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
      * returns wrong ranges whose values were multiplied by 1000. So we need to convert them to the
      * correct values.
      */
-    private @NonNull Range<Integer> getCorrectedFpsRange(final @NonNull Range<Integer> fpsRange) {
+    @NonNull
+    private Range<Integer> getCorrectedFpsRange(@NonNull final Range<Integer> fpsRange) {
         int newUpper = fpsRange.getUpper();
         int newLower = fpsRange.getLower();
         if (fpsRange.getUpper() >= 1000) {
@@ -99,17 +115,5 @@ public class AeFpsRangeLegacyQuirk implements AeFpsRangeQuirk {
         }
 
         return new Range<>(newLower, newUpper);
-    }
-
-    /**
-     * Returns the fps range whose upper is 30 and whose lower is the smallest, or null if no
-     * range has an upper equal to 30.  The rational is:
-     * 1. Range upper is always 30 so that a smooth frame rate is guaranteed.
-     * 2. Range lower contains the smallest supported value so that it can adapt as much as
-     * possible to low light conditions.
-     */
-    @Override
-    public @NonNull Range<Integer> getTargetAeFpsRange() {
-        return mAeFpsRange != null ? mAeFpsRange : StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
     }
 }

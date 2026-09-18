@@ -20,11 +20,10 @@ import android.hardware.camera2.params.DynamicRangeProfiles;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -78,8 +77,9 @@ class OutputConfigurationCompatApi28Impl extends OutputConfigurationCompatApi26I
     }
 
     /** Always returns null on API &gt;= 28. Framework handles physical camera ID checks. */
+    @Nullable
     @Override
-    public @Nullable String getPhysicalCameraId() {
+    public String getPhysicalCameraId() {
         return null;
     }
 
@@ -93,14 +93,16 @@ class OutputConfigurationCompatApi28Impl extends OutputConfigurationCompatApi26I
         ((OutputConfigurationParamsApi28) mObject).mDynamicRangeProfile = profile;
     }
 
+    @NonNull
     @Override
-    public @NonNull Object getOutputConfiguration() {
+    public Object getOutputConfiguration() {
         Preconditions.checkArgument(mObject instanceof OutputConfigurationParamsApi28);
         return ((OutputConfigurationParamsApi28) mObject).mOutputConfiguration;
     }
 
     private static final class OutputConfigurationParamsApi28 {
-        final @NonNull OutputConfiguration mOutputConfiguration;
+        @NonNull
+        final OutputConfiguration mOutputConfiguration;
 
         long mDynamicRangeProfile = DynamicRangeProfiles.STANDARD;
 

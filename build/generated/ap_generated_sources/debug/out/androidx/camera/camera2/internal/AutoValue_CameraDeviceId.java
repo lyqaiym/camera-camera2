@@ -1,24 +1,24 @@
 package androidx.camera.camera2.internal;
 
+import androidx.annotation.NonNull;
 import javax.annotation.processing.Generated;
-import org.jspecify.annotations.NonNull;
 
 @Generated("com.google.auto.value.processor.AutoValueProcessor")
 final class AutoValue_CameraDeviceId extends CameraDeviceId {
 
-  private final @NonNull String brand;
+  private final String brand;
 
-  private final @NonNull String device;
+  private final String device;
 
-  private final @NonNull String model;
+  private final String model;
 
-  private final @NonNull String cameraId;
+  private final String cameraId;
 
   AutoValue_CameraDeviceId(
-      @NonNull String brand,
-      @NonNull String device,
-      @NonNull String model,
-      @NonNull String cameraId) {
+      String brand,
+      String device,
+      String model,
+      String cameraId) {
     if (brand == null) {
       throw new NullPointerException("Null brand");
     }
@@ -37,23 +37,27 @@ final class AutoValue_CameraDeviceId extends CameraDeviceId {
     this.cameraId = cameraId;
   }
 
+  @NonNull
   @Override
-  public @NonNull String getBrand() {
+  public String getBrand() {
     return brand;
   }
 
+  @NonNull
   @Override
-  public @NonNull String getDevice() {
+  public String getDevice() {
     return device;
   }
 
+  @NonNull
   @Override
-  public @NonNull String getModel() {
+  public String getModel() {
     return model;
   }
 
+  @NonNull
   @Override
-  public @NonNull String getCameraId() {
+  public String getCameraId() {
     return cameraId;
   }
 

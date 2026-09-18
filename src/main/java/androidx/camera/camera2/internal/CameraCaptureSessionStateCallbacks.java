@@ -20,10 +20,9 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.os.Build;
 import android.view.Surface;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.camera.camera2.internal.compat.ApiCompat;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,14 +38,16 @@ public final class CameraCaptureSessionStateCallbacks {
     /**
      * Returns a session state callback which does nothing.
      */
-    public static CameraCaptureSession.@NonNull StateCallback createNoOpCallback() {
+    @NonNull
+    public static CameraCaptureSession.StateCallback createNoOpCallback() {
         return new NoOpSessionStateCallback();
     }
 
     /**
      * Returns a session state callback which calls a list of other callbacks.
      */
-    public static CameraCaptureSession.@NonNull StateCallback createComboCallback(
+    @NonNull
+    public static CameraCaptureSession.StateCallback createComboCallback(
             @NonNull List<CameraCaptureSession.StateCallback> callbacks) {
         if (callbacks.isEmpty()) {
             return createNoOpCallback();
@@ -59,8 +60,9 @@ public final class CameraCaptureSessionStateCallbacks {
     /**
      * Returns a session state callback which calls a list of other callbacks.
      */
-    public static CameraCaptureSession.@NonNull StateCallback createComboCallback(
-            CameraCaptureSession.StateCallback @NonNull ... callbacks) {
+    @NonNull
+    public static CameraCaptureSession.StateCallback createComboCallback(
+            @NonNull CameraCaptureSession.StateCallback... callbacks) {
         return createComboCallback(Arrays.asList(callbacks));
     }
 

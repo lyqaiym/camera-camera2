@@ -20,9 +20,8 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CaptureRequest;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
-
-import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -37,14 +36,14 @@ class CameraCaptureSessionCompatApi28Impl extends CameraCaptureSessionCompatBase
     @Override
     public int captureBurstRequests(@NonNull List<CaptureRequest> requests,
             @NonNull Executor executor,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         // Call through directly to executor API
         return mCameraCaptureSession.captureBurstRequests(requests, executor, listener);
     }
 
     @Override
     public int captureSingleRequest(@NonNull CaptureRequest request, @NonNull Executor executor,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         // Call through directly to executor API
         return mCameraCaptureSession.captureSingleRequest(request, executor, listener);
     }
@@ -52,7 +51,7 @@ class CameraCaptureSessionCompatApi28Impl extends CameraCaptureSessionCompatBase
     @Override
     public int setRepeatingBurstRequests(@NonNull List<CaptureRequest> requests,
             @NonNull Executor executor,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         // Call through directly to executor API
         return mCameraCaptureSession.setRepeatingBurstRequests(requests, executor, listener);
     }
@@ -60,7 +59,7 @@ class CameraCaptureSessionCompatApi28Impl extends CameraCaptureSessionCompatBase
     @Override
     public int setSingleRepeatingRequest(@NonNull CaptureRequest request,
             @NonNull Executor executor,
-            CameraCaptureSession.@NonNull CaptureCallback listener) throws CameraAccessException {
+            @NonNull CameraCaptureSession.CaptureCallback listener) throws CameraAccessException {
         // Call through directly to executor API
         return mCameraCaptureSession.setSingleRepeatingRequest(request, executor, listener);
     }
